@@ -1,0 +1,30 @@
+version: '3'
+services:
+  postgres:
+    image: 'postgres:14-alpine'
+    ports:
+      - "5432:5432"
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: github
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+
+  adminer:
+    image: adminer
+    ports:
+      - 5053:8080
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+      
