@@ -24,8 +24,12 @@ func main() {
 	repositoriesHandler := handlers.NewRepositoriesHandler(githubRestClient)
 	repositoriesRouting := routing.RepositoriesRouting(repositoriesHandler)
 
+	commitsHandler := handlers.NewcommitsHandler(githubRestClient)
+	commitsRouting := routing.CommitsRouting(commitsHandler)
+
 	var routesList []routers.Route
 	routesList = append(routesList, repositoriesRouting...)
+	routesList = append(routesList, commitsRouting...)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", webPort),
