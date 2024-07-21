@@ -1,25 +1,26 @@
-package githubapi
+package githubrestclient
 
 import (
 	"encoding/json"
 	"fmt"
 	"go-github-tracker/internal/constants/models"
+	"log"
 	"time"
 
 	"net/http"
 )
 
-type GithubAPi struct {
+type GithubRestClient struct {
 	Config *models.Config
 }
 
-func NewGithubAPi(Config *models.Config) GithubAPi {
-	return GithubAPi{Config: Config}
+func NewGithubRestClient(Config *models.Config) GithubRestClient {
+	return GithubRestClient{Config: Config}
 }
 
 const base_url = "https://api.github.com"
 
-func (gp GithubAPi) FetchRepositories() ([]models.RepositoryReponse, error) {
+func (gp GithubRestClient) FetchRepositories() ([]models.RepositoryReponse, error) {
 	fetchRepoUrl := base_url + fmt.Sprintf("/users/%s/repos", gp.Config.GithubUsername)
 
 	request, err := http.NewRequest(http.MethodGet, fetchRepoUrl, nil)
@@ -28,11 +29,13 @@ func (gp GithubAPi) FetchRepositories() ([]models.RepositoryReponse, error) {
 	request.Header.Add("X-GitHub-Api-Version", "2022-11-28")
 
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 	defer response.Body.Close()
@@ -40,13 +43,14 @@ func (gp GithubAPi) FetchRepositories() ([]models.RepositoryReponse, error) {
 	var repositories []models.RepositoryReponse
 	err = json.NewDecoder(response.Body).Decode(&repositories)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
 	return repositories, nil
 }
 
-func (gp GithubAPi) FetchCommits(repositoryName string, since time.Time) ([]models.CommitReponse, error) {
+func (gp GithubRestClient) FetchCommits(repositoryName string, since time.Time) ([]models.CommitReponse, error) {
 	fetchRepoUrl := base_url + fmt.Sprintf("/repos/%s/%s/commits", gp.Config.GithubUsername, repositoryName)
 	if !since.IsZero() {
 		fetchRepoUrl += fmt.Sprintf("?since=%s", since)
