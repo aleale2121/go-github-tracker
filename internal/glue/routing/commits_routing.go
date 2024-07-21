@@ -7,12 +7,12 @@ import (
 	"go-github-tracker/platforms/routers"
 )
 
-func CommitsRouting(handler *h.RepositoriesHandler) []routers.Route {
+func CommitsRouting(handler *h.CommitsHandler) []routers.Route {
 	return []routers.Route{
 		{
 			Method:      http.MethodGet,
 			Path:        "/commits/{repositoryName}",
-			Handle:      handler.GetAllRepositories,
+			Handle:      handler.GetAllcommits,
 			MiddleWares: []http.HandlerFunc{},
 		},
 	}
