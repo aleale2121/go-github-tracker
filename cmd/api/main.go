@@ -12,10 +12,10 @@ import (
 	"os"
 )
 
-const webPort = "8081"
+const webPort = "80"
 
 func main() {
-	
+	fmt.Println("GITHUB_TOKEN", os.Getenv("GITHUB_TOKEN"))
 	githubRestClient := githubrestclient.NewGithubRestClient(&models.Config{
 		GithubToken:    os.Getenv("GITHUB_TOKEN"),
 		GithubUsername: os.Getenv("GITHUB_USERNAME"),
@@ -41,4 +41,5 @@ func main() {
 		log.Panic(err)
 	}
 
+	log.Println("server started at port :80")
 }

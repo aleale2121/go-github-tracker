@@ -20,7 +20,7 @@ func NewGithubRestClient(Config *models.Config) GithubRestClient {
 
 const base_url = "https://api.github.com"
 
-func (gp GithubRestClient) FetchRepositories() ([]models.RepositoryReponse, error) {
+func (gp GithubRestClient) FetchRepositories() ([]models.RepositoryResponse, error) {
 	fetchRepoUrl := base_url + fmt.Sprintf("/users/%s/repos", gp.Config.GithubUsername)
 
 	request, err := http.NewRequest(http.MethodGet, fetchRepoUrl, nil)
@@ -40,7 +40,7 @@ func (gp GithubRestClient) FetchRepositories() ([]models.RepositoryReponse, erro
 	}
 	defer response.Body.Close()
 
-	var repositories []models.RepositoryReponse
+	var repositories []models.RepositoryResponse
 	err = json.NewDecoder(response.Body).Decode(&repositories)
 	if err != nil {
 		log.Println(err)
@@ -50,7 +50,7 @@ func (gp GithubRestClient) FetchRepositories() ([]models.RepositoryReponse, erro
 	return repositories, nil
 }
 
-func (gp GithubRestClient) FetchCommits(repositoryName string, since time.Time) ([]models.CommitReponse, error) {
+func (gp GithubRestClient) FetchCommits(repositoryName string, since time.Time) ([]models.CommitResponse, error) {
 	fetchRepoUrl := base_url + fmt.Sprintf("/repos/%s/%s/commits", gp.Config.GithubUsername, repositoryName)
 	if !since.IsZero() {
 		fetchRepoUrl += fmt.Sprintf("?since=%s", since)
@@ -70,7 +70,7 @@ func (gp GithubRestClient) FetchCommits(repositoryName string, since time.Time) 
 	}
 	defer response.Body.Close()
 
-	var commits []models.CommitReponse
+	var commits []models.CommitResponse
 	err = json.NewDecoder(response.Body).Decode(&commits)
 	if err != nil {
 		return nil, err

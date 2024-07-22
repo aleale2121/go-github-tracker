@@ -93,8 +93,28 @@ func (rp *RepositoryPersistence) InsertRepository(repo models.Repository) (int64
 	return id, nil
 }
 
-// Function to check if a repository exists
-func (rp *RepositoryPersistence) RepositoryExists(db *sql.DB, id int64) (bool, error) {
+// SaveAllRepositories inserts or updates multiple repositories in the database.
+func (rp *RepositoryPersistence) SaveAllRepositories(repos []models.Repository) error {
+	for _, repo := range repos {
+		exists, err := rp.RepositoryExists(repo.ID)
+		if err != nil {
+			return err
+		}
+		if exists {
+			if err := rp.UpdateRepository(repo); err != nil {
+				return err
+			}
+		} else {
+			if _, err := rp.InsertRepository(repo); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// RepositoryExists checks if a repository exists in the database.
+func (rp *RepositoryPersistence) RepositoryExists(id int64) (bool, error) {
 	var exists bool
 	query := "SELECT EXISTS (SELECT 1 FROM repositories WHERE id = $1)"
 	err := rp.db.QueryRow(query, id).Scan(&exists)

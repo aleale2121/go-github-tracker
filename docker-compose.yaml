@@ -1,7 +1,7 @@
-version: '3'
+version: "3"
 services:
   postgres:
-    image: 'postgres:14-alpine'
+    image: "postgres:14-alpine"
     ports:
       - "5432:5432"
     restart: always
@@ -11,7 +11,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: github
+      POSTGRES_DB: github_tracker
     volumes:
       - ./db:/docker-entrypoint-initdb.d
 
@@ -27,4 +27,19 @@ services:
       restart_policy:
         condition: on-failure
 
-      
+  github-service:
+    build:
+      context: .
+    restart: always
+    ports:
+      - "8081:80"
+    depends_on:
+      - postgres
+    deploy:
+      mode: replicated
+      replicas: 1
+    # environment:
+      # DSN: "host=postgres port=5432 user=postgres password=password dbname=github_tracker sslmode=disable timezone=UTC connect_timeout=5"
+      # GITHUB_TOKEN: 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
+      # GITHUB_USERNAME: aleale2121
+    env_file: "app.env"
