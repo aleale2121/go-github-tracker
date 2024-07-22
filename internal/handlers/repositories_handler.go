@@ -2,22 +2,23 @@ package handlers
 
 import (
 	"errors"
-	"go-github-tracker/internal/pkg/githubrestclient"
+	"go-github-tracker/internal/storage/db"
 	"net/http"
 )
 
 type RepositoriesHandler struct {
-	GithubRestClient githubrestclient.GithubRestClient
+	RepositoryPersistence db.RepositoryPersistence
+	
 }
 
-func NewRepositoriesHandler(githubrestclient githubrestclient.GithubRestClient) *RepositoriesHandler {
+func NewRepositoriesHandler(repositoryPersistence db.RepositoryPersistence) *RepositoriesHandler {
 	return &RepositoriesHandler{
-		GithubRestClient: githubrestclient,
+		RepositoryPersistence: repositoryPersistence,
 	}
 }
 
 func (h *RepositoriesHandler) GetAllRepositories(w http.ResponseWriter, r *http.Request) {
-	repositories, err := h.GithubRestClient.FetchRepositories()
+	repositories, err := h.RepositoryPersistence.GetAllRepositories()
 	if err != nil {
 		errorJSON(w, errors.New("failed to fetch repositories"), http.StatusBadRequest)
 		return

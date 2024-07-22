@@ -2,11 +2,9 @@ package models
 
 import (
 	"time"
-
 )
 
 type Repository struct {
-	ID              int64     `json:"id"`
 	Name            string    `json:"name"`
 	Description     string    `json:"description"`
 	URL             string    `json:"url"`
@@ -20,20 +18,27 @@ type Repository struct {
 }
 
 type Commit struct {
-	SHA          string    `json:"sha"`
-	URL          string    `json:"url"`
-	Message      string    `json:"message"`
-	AuthorName   string    `json:"author_name"`
-	AuthorDate   time.Time `json:"author_date"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	RepositoryID int64     `json:"repository_id"`
+	SHA            string    `json:"sha"`
+	URL            string    `json:"url"`
+	Message        string    `json:"message"`
+	AuthorName     string    `json:"author_name"`
+	AuthorDate     time.Time `json:"author_date"`
+	RepositoryName string    `json:"repository_name"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
-type FetchMetadata struct {
-	ID                  int64     `json:"id"`
-	LastRepositoryFetch time.Time `json:"last_repository_fetch"`
-	LastCommitFetch     time.Time `json:"last_commit_fetch"`
+type FetchReposMetadata struct {
+	ID        int64
+	Total     int
+	FetchedAt time.Time
+}
+
+type FetchCommitsMetadata struct {
+	ID             int64
+	RepositoryName string
+	Total          int
+	FetchedAt      time.Time
 }
 
 type Config struct {

@@ -18,7 +18,7 @@ func NewRepositoryPersistence(dbPool *sql.DB) RepositoryPersistence {
 
 // GetAllRepositories returns all repositories from the database.
 func (rp *RepositoryPersistence) GetAllRepositories() ([]*models.Repository, error) {
-	rows, err := rp.db.Query("SELECT id, name, description, url, language, forks_count, stars_count, open_issues_count, watchers_count, created_at, updated_at FROM repositories")
+	rows, err := rp.db.Query("SELECT * FROM repositories")
 	if err != nil {
 		log.Println("Error querying repositories:", err)
 		return nil, err
@@ -28,7 +28,7 @@ func (rp *RepositoryPersistence) GetAllRepositories() ([]*models.Repository, err
 	var repositories []*models.Repository
 	for rows.Next() {
 		var repo models.Repository
-		if err := rows.Scan(&repo.ID, &repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt); err != nil {
+		if err := rows.Scan(&repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt); err != nil {
 			log.Println("Error scanning repository row:", err)
 			return nil, err
 		}
@@ -44,10 +44,10 @@ func (rp *RepositoryPersistence) GetAllRepositories() ([]*models.Repository, err
 }
 
 // GetRepositoryByID returns a repository from the database by ID.
-func (rp *RepositoryPersistence) GetRepositoryByID(id int64) (*models.Repository, error) {
+func (rp *RepositoryPersistence) GetRepositoryByID(name string) (*models.Repository, error) {
 	var repo models.Repository
-	err := rp.db.QueryRow("SELECT id, name, description, url, language, forks_count, stars_count, open_issues_count, watchers_count, created_at, updated_at FROM repositories WHERE id = $1", id).
-		Scan(&repo.ID, &repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt)
+	err := rp.db.QueryRow("SELECT name, description, url, language, forks_count, stars_count, open_issues_count, watchers_count, created_at, updated_at FROM repositories WHERE name = $1", name).
+		Scan(&repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt)
 	if err != nil {
 		log.Println("Error querying repository by ID:", err)
 		return nil, err
@@ -57,8 +57,8 @@ func (rp *RepositoryPersistence) GetRepositoryByID(id int64) (*models.Repository
 
 // UpdateRepository updates a repository in the database.
 func (rp *RepositoryPersistence) UpdateRepository(repo models.Repository) error {
-	_, err := rp.db.Exec("UPDATE repositories SET name = $1, description = $2, url = $3, language = $4, forks_count = $5, stars_count = $6, open_issues_count = $7, watchers_count = $8, created_at = $9, updated_at = $10 WHERE id = $11",
-		repo.Name, repo.Description, repo.URL, repo.Language, repo.ForksCount, repo.StarsCount, repo.OpenIssuesCount, repo.WatchersCount, repo.CreatedAt, repo.UpdatedAt, repo.ID)
+	_, err := rp.db.Exec("UPDATE repositories SET  description = $1, url = $2, language = $3, forks_count = $4, stars_count = $5, open_issues_count = $6, watchers_count = $7, created_at = $8, updated_at = $9 WHERE name = $10",
+		repo.Description, repo.URL, repo.Language, repo.ForksCount, repo.StarsCount, repo.OpenIssuesCount, repo.WatchersCount, repo.CreatedAt, repo.UpdatedAt, repo.Name)
 	if err != nil {
 		log.Println("Error updating repository:", err)
 		return err
@@ -67,8 +67,8 @@ func (rp *RepositoryPersistence) UpdateRepository(repo models.Repository) error 
 }
 
 // DeleteRepository deletes a repository from the database.
-func (rp *RepositoryPersistence) DeleteRepository(id int64) error {
-	_, err := rp.db.Exec("DELETE FROM repositories WHERE id = $1", id)
+func (rp *RepositoryPersistence) DeleteRepository(name string) error {
+	_, err := rp.db.Exec("DELETE FROM repositories WHERE name = $1", name)
 	if err != nil {
 		log.Println("Error deleting repository:", err)
 		return err
@@ -77,26 +77,26 @@ func (rp *RepositoryPersistence) DeleteRepository(id int64) error {
 }
 
 // InsertRepository inserts a new repository into the database.
-func (rp *RepositoryPersistence) InsertRepository(repo models.Repository) (int64, error) {
+func (rp *RepositoryPersistence) InsertRepository(repo models.Repository) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	stmt := `INSERT INTO repositories (name, description, url, language, forks_count, stars_count, open_issues_count, watchers_count, created_at, updated_at) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning id`
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning name`
 
-	var id int64
-	err := rp.db.QueryRowContext(ctx, stmt, repo.Name, repo.Description, repo.URL, repo.Language, repo.ForksCount, repo.StarsCount, repo.OpenIssuesCount, repo.WatchersCount, repo.CreatedAt, repo.UpdatedAt).Scan(&id)
+	var name string
+	err := rp.db.QueryRowContext(ctx, stmt, repo.Name, repo.Description, repo.URL, repo.Language, repo.ForksCount, repo.StarsCount, repo.OpenIssuesCount, repo.WatchersCount, repo.CreatedAt, repo.UpdatedAt).Scan(&name)
 	if err != nil {
 		log.Println("Error inserting repository:", err)
-		return 0, err
+		return "", err
 	}
-	return id, nil
+	return name, nil
 }
 
 // SaveAllRepositories inserts or updates multiple repositories in the database.
 func (rp *RepositoryPersistence) SaveAllRepositories(repos []models.Repository) error {
 	for _, repo := range repos {
-		exists, err := rp.RepositoryExists(repo.ID)
+		exists, err := rp.RepositoryExists(repo.Name)
 		if err != nil {
 			return err
 		}
@@ -114,9 +114,9 @@ func (rp *RepositoryPersistence) SaveAllRepositories(repos []models.Repository) 
 }
 
 // RepositoryExists checks if a repository exists in the database.
-func (rp *RepositoryPersistence) RepositoryExists(id int64) (bool, error) {
+func (rp *RepositoryPersistence) RepositoryExists(name string) (bool, error) {
 	var exists bool
-	query := "SELECT EXISTS (SELECT 1 FROM repositories WHERE id = $1)"
-	err := rp.db.QueryRow(query, id).Scan(&exists)
+	query := "SELECT EXISTS (SELECT 1 FROM repositories WHERE name = $1)"
+	err := rp.db.QueryRow(query, name).Scan(&exists)
 	return exists, err
 }

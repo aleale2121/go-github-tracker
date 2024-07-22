@@ -4,8 +4,6 @@ import (
 	"go-github-tracker/internal/constants/models"
 )
 
-
-
 func ConvertRepositoryResponseToRepository(response models.RepositoryResponse) models.Repository {
 	description := ""
 	if response.Description != nil {
@@ -13,7 +11,6 @@ func ConvertRepositoryResponseToRepository(response models.RepositoryResponse) m
 	}
 
 	return models.Repository{
-		ID:              int64(response.ID),
 		Name:            response.Name,
 		Description:     description,
 		URL:             response.HTMLURL,
@@ -27,15 +24,15 @@ func ConvertRepositoryResponseToRepository(response models.RepositoryResponse) m
 	}
 }
 
-func ConvertCommitResponseToCommit(response models.CommitResponse, repositoryID int64) models.Commit {
+func ConvertCommitResponseToCommit(response models.CommitResponse, repositoryName string) models.Commit {
 	return models.Commit{
-		SHA:          response.Sha,
-		URL:          response.URL,
-		Message:      response.Commit.Message,
-		AuthorName:   response.Commit.Author.Name,
-		AuthorDate:   response.Commit.Author.Date,
-		CreatedAt:    response.Commit.Author.Date,
-		UpdatedAt:    response.Commit.Committer.Date,
-		RepositoryID: repositoryID,
+		SHA:            response.Sha,
+		URL:            response.URL,
+		Message:        response.Commit.Message,
+		AuthorName:     response.Commit.Author.Name,
+		AuthorDate:     response.Commit.Author.Date,
+		CreatedAt:      response.Commit.Author.Date,
+		UpdatedAt:      response.Commit.Committer.Date,
+		RepositoryName: repositoryName,
 	}
 }

@@ -3,27 +3,26 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"time"
 
-	"go-github-tracker/internal/pkg/githubrestclient"
+	"go-github-tracker/internal/storage/db"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type CommitsHandler struct {
-	GithubRestClient githubrestclient.GithubRestClient
+	CommitPersistence db.CommitPersistence
 }
 
-func NewcommitsHandler(githubrestclient githubrestclient.GithubRestClient) *CommitsHandler {
+func NewcommitsHandler(commitPersistence db.CommitPersistence) *CommitsHandler {
 	return &CommitsHandler{
-		GithubRestClient: githubrestclient,
+		CommitPersistence: commitPersistence,
 	}
 }
 
 func (h *CommitsHandler) GetAllcommits(w http.ResponseWriter, r *http.Request) {
 	repoName := chi.URLParam(r, "repositoryName")
 
-	commits, err := h.GithubRestClient.FetchCommits(repoName, time.Time{})
+	commits, err := h.CommitPersistence.GetCommitsByRepoName(repoName)
 	if err != nil {
 		errorJSON(w, errors.New("failed to fetch commits"), http.StatusBadRequest)
 		return
