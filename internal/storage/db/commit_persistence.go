@@ -146,3 +146,58 @@ func (cp *CommitPersistence) GetCommitsByRepoName(repoName string) ([]*models.Co
 
 	return commits, nil
 }
+
+// GetTopCommitAuthors returns the top N commit authors overall.
+func (cp *CommitPersistence) GetTopCommitAuthors(limit int) ([]*models.CommitAuthor, error) {
+	query := `
+        SELECT author_name, COUNT(*) as commit_count
+        FROM commits
+        GROUP BY author_name
+        ORDER BY commit_count DESC
+        LIMIT $1;
+    `
+	rows, err := cp.db.Query(query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var authors []*models.CommitAuthor
+	for rows.Next() {
+		var author models.CommitAuthor
+		if err := rows.Scan(&author.Name, &author.CommitCount); err != nil {
+			return nil, err
+		}
+		authors = append(authors, &author)
+	}
+
+	return authors, nil
+}
+
+// GetTopCommitAuthorsByRepo returns the top N commit authors for a specific repository.
+func (cp *CommitPersistence) GetTopCommitAuthorsByRepo(repoName string, limit int) ([]*models.CommitAuthor, error) {
+	query := `
+        SELECT author_name, COUNT(*) as commit_count
+        FROM commits
+        WHERE repository_name = $1
+        GROUP BY author_name
+        ORDER BY commit_count DESC
+        LIMIT $2;
+    `
+	rows, err := cp.db.Query(query, repoName, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var authors []*models.CommitAuthor
+	for rows.Next() {
+		var author models.CommitAuthor
+		if err := rows.Scan(&author.Name, &author.CommitCount); err != nil {
+			return nil, err
+		}
+		authors = append(authors, &author)
+	}
+
+	return authors, nil
+}

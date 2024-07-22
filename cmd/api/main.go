@@ -42,7 +42,7 @@ func main() {
 	repositoriesRouting := routing.RepositoriesRouting(repositoriesHandler)
 
 	commitPersistence := db.NewCommitPersistence(dbConn)
-	commitsHandler := handlers.NewcommitsHandler(commitPersistence)
+	commitsHandler := handlers.NewCommitsHandler(commitPersistence)
 	commitsRouting := routing.CommitsRouting(commitsHandler)
 
 	MetaDataPersistence := db.NewMetadataPersistence(dbConn)

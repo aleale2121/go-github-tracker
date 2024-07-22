@@ -28,6 +28,12 @@ type Commit struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
+type CommitAuthor struct {
+	Name        string `json:"name"`
+	CommitCount int    `json:"commit_count"`
+}
+
+
 type FetchReposMetadata struct {
 	ID        int64
 	Total     int

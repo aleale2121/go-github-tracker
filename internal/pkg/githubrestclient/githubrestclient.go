@@ -21,9 +21,9 @@ func NewGithubRestClient(Config *models.Config) GithubRestClient {
 const base_url = "https://api.github.com"
 
 func (gp GithubRestClient) FetchRepositories(since string) ([]models.RepositoryResponse, error) {
-	fetchRepoUrl := base_url + fmt.Sprintf("/users/%s/repos", gp.Config.GithubUsername)
+	fetchRepoUrl := base_url + fmt.Sprintf("/users/%s/repos?sort=updated&direction=desc", gp.Config.GithubUsername)
 	if since != "" {
-		fetchRepoUrl += fmt.Sprintf("?since=%s", since)
+		fetchRepoUrl += fmt.Sprintf("&since=%s", since)
 	}
 	fmt.Println(fetchRepoUrl)
 	request, err := http.NewRequest(http.MethodGet, fetchRepoUrl, nil)
