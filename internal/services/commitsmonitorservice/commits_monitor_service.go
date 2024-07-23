@@ -1,4 +1,4 @@
-package commentmonitorservice
+package commitsmonitorservice
 
 import (
 	"fmt"
