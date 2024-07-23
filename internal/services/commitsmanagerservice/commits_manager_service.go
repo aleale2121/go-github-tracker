@@ -1,4 +1,4 @@
-package commentmanagerservice
+package commitsmanagerservice
 
 import "go-github-tracker/internal/storage/db"
 import "go-github-tracker/internal/constants/models"
