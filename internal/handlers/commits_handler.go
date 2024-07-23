@@ -5,25 +5,25 @@ import (
 	"net/http"
 	"strconv"
 
-	"go-github-tracker/internal/storage/db"
+	"go-github-tracker/internal/services/commitsmanagerservice"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type CommitsHandler struct {
-	CommitPersistence db.CommitPersistence
+	CommitsManagerService commitsmanagerservice.CommitsManagerService
 }
 
-func NewCommitsHandler(commitPersistence db.CommitPersistence) *CommitsHandler {
+func NewCommitsHandler(commitPersistence commitsmanagerservice.CommitsManagerService) *CommitsHandler {
 	return &CommitsHandler{
-		CommitPersistence: commitPersistence,
+		CommitsManagerService: commitPersistence,
 	}
 }
 
 func (h *CommitsHandler) GetAllCommits(w http.ResponseWriter, r *http.Request) {
 	repoName := chi.URLParam(r, "repositoryName")
 
-	commits, err := h.CommitPersistence.GetCommitsByRepoName(repoName)
+	commits, err := h.CommitsManagerService.GetCommitsByRepositoryName(repoName)
 	if err != nil {
 		errorJSON(w, errors.New("failed to fetch commits"), http.StatusBadRequest)
 		return
@@ -46,7 +46,7 @@ func (h *CommitsHandler) GetTopCommitAuthors(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	authors, err := h.CommitPersistence.GetTopCommitAuthors(limit)
+	authors, err := h.CommitsManagerService.GetTopCommitAuthors(limit)
 	if err != nil {
 		errorJSON(w, errors.New("failed to fetch top commit authors"), http.StatusBadRequest)
 		return
@@ -70,7 +70,7 @@ func (h *CommitsHandler) GetTopCommitAuthorsByRepo(w http.ResponseWriter, r *htt
 		return
 	}
 
-	authors, err := h.CommitPersistence.GetTopCommitAuthorsByRepo(repoName, limit)
+	authors, err := h.CommitsManagerService.GetTopCommitAuthorsByRepoName(repoName, limit)
 	if err != nil {
 		errorJSON(w, errors.New("failed to fetch top commit authors for repository"), http.StatusBadRequest)
 		return
