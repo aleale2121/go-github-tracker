@@ -32,6 +32,7 @@ func NewSchedulerService(repositoryPersistence db.RepositoryPersistence,
 }
 
 func (sc *SchedulerService) ScheduleFetchingRepository(interval time.Duration) {
+	sc.fetchAndSaveRepositories() //Initial Fetch
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	fmt.Println("Fetching Repositories Started ")
@@ -80,9 +81,10 @@ func (sc *SchedulerService) fetchAndSaveRepositories() {
 }
 
 func (sc *SchedulerService) ScheduleFetchingCommits(interval time.Duration) {
+	fmt.Println("Fetching Commits Started ")
+	sc.fetchAndSaveRepositories() //Initial Fetch
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
-	fmt.Println("CM Fetching Commits Started ")
 	for range ticker.C {
 		go sc.fetchAndSaveCommits()
 	}

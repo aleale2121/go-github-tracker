@@ -54,8 +54,8 @@ func main() {
 	schedulerService := scheduler.NewSchedulerService(repositoryPersistence, commitPersistence,
 		MetaDataPersistence, githubRestClient)
 
-	go schedulerService.ScheduleFetchingRepository(time.Second * 30)
-	go schedulerService.ScheduleFetchingCommits(time.Second * 60)
+	go schedulerService.ScheduleFetchingRepository(time.Hour * 24)
+	go schedulerService.ScheduleFetchingCommits(time.Hour * 1)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", webPort),
@@ -67,7 +67,6 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-
 }
 
 func openDB(dsn string) (*sql.DB, error) {
