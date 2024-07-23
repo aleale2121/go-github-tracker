@@ -9,9 +9,14 @@ import (
 	"go-github-tracker/internal/glue/routing"
 	"go-github-tracker/internal/handlers"
 	"go-github-tracker/internal/pkg/githubrestclient"
-	"go-github-tracker/internal/pkg/scheduler"
 	"go-github-tracker/internal/storage/db"
 	"go-github-tracker/platforms/routers"
+
+	"go-github-tracker/internal/services/commitsmanagerservice"
+	"go-github-tracker/internal/services/repomanagerservice"
+
+	"go-github-tracker/internal/services/commitsmonitorservice"
+	"go-github-tracker/internal/services/reposdiscoveryservice"
 
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
@@ -38,11 +43,13 @@ func main() {
 	})
 
 	repositoryPersistence := db.NewRepositoryPersistence(dbConn)
-	repositoriesHandler := handlers.NewRepositoriesHandler(repositoryPersistence)
+	repositoryManagerService := repomanagerservice.NewRepositoryManagerService(repositoryPersistence)
+	repositoriesHandler := handlers.NewRepositoriesHandler(repositoryManagerService)
 	repositoriesRouting := routing.RepositoriesRouting(repositoriesHandler)
 
 	commitPersistence := db.NewCommitPersistence(dbConn)
-	commitsHandler := handlers.NewCommitsHandler(commitPersistence)
+	commitsManagerService := commitsmanagerservice.NewCommitsManagerService(commitPersistence)
+	commitsHandler := handlers.NewCommitsHandler(commitsManagerService)
 	commitsRouting := routing.CommitsRouting(commitsHandler)
 
 	MetaDataPersistence := db.NewMetadataPersistence(dbConn)
@@ -51,11 +58,14 @@ func main() {
 	routesList = append(routesList, repositoriesRouting...)
 	routesList = append(routesList, commitsRouting...)
 
-	schedulerService := scheduler.NewSchedulerService(repositoryPersistence, commitPersistence,
+	commitsMonitorService := commitsmonitorservice.NewCommentMonitorService(repositoryPersistence, commitPersistence,
 		MetaDataPersistence, githubRestClient)
 
-	go schedulerService.ScheduleFetchingRepository(time.Hour * 24)
-	go schedulerService.ScheduleFetchingCommits(time.Hour * 1)
+	reposDiscoveryService := reposdiscoveryservice.NewReposDiscoveryService(repositoryPersistence,
+		MetaDataPersistence, githubRestClient)
+
+	go reposDiscoveryService.ScheduleFetchingRepository(time.Hour * 24)
+	go commitsMonitorService.ScheduleFetchingCommits(time.Hour * 1)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", webPort),
