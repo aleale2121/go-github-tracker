@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 type CommentMonitorService struct {
 	RepositoryPersistence db.RepositoryPersistence
 	CommitPersistence     db.CommitPersistence
@@ -32,8 +31,14 @@ func NewCommentMonitorService(repositoryPersistence db.RepositoryPersistence,
 }
 
 func (sc *CommentMonitorService) ScheduleFetchingCommits(interval time.Duration) {
+	// Wait 1 minute for first repository fetch 
+	timer := time.After(60 * time.Second)
+	<-timer
+
+	// Start Fetching Commits
 	fmt.Println("Fetching Commits Started ")
-	sc.fetchAndSaveCommits() 
+	sc.fetchAndSaveCommits()
+
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for range ticker.C {
@@ -100,8 +105,6 @@ func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo models.Reposito
 		}
 	}
 }
-
-
 
 func ConvertCommitResponseToCommit(response models.CommitResponse, repositoryName string) models.Commit {
 	return models.Commit{
