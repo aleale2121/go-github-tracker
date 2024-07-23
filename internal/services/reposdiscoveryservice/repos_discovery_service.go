@@ -1,4 +1,4 @@
-package repodiscoveryservice
+package reposdiscoveryservice
 
 import (
 	"fmt"
@@ -9,27 +9,24 @@ import (
 	"time"
 )
 
-type CommentDiscoveryService struct {
+type ReposDiscoveryService struct {
 	RepositoryPersistence db.RepositoryPersistence
-	CommitPersistence     db.CommitPersistence
 	MetadataPersistence   db.MetadataPersistence
 	GithubRestClient      githubrestclient.GithubRestClient
 }
 
-func NewCommentDiscoveryService(repositoryPersistence db.RepositoryPersistence,
-	commitPersistence db.CommitPersistence,
+func NewReposDiscoveryService(repositoryPersistence db.RepositoryPersistence,
 	MetadataPersistence db.MetadataPersistence,
 	GithubRestClient githubrestclient.GithubRestClient,
-) CommentDiscoveryService {
-	return CommentDiscoveryService{
+) ReposDiscoveryService {
+	return ReposDiscoveryService{
 		RepositoryPersistence: repositoryPersistence,
-		CommitPersistence:     commitPersistence,
 		MetadataPersistence:   MetadataPersistence,
 		GithubRestClient:      GithubRestClient,
 	}
 }
 
-func (sc *CommentDiscoveryService) ScheduleFetchingRepository(interval time.Duration) {
+func (sc *ReposDiscoveryService) ScheduleFetchingRepository(interval time.Duration) {
 	sc.fetchAndSaveRepositories() //Initial Fetch
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -39,7 +36,7 @@ func (sc *CommentDiscoveryService) ScheduleFetchingRepository(interval time.Dura
 	}
 }
 
-func (sc *CommentDiscoveryService) fetchAndSaveRepositories() {
+func (sc *ReposDiscoveryService) fetchAndSaveRepositories() {
 	fetchTime := time.Now()
 	lastFetchTime, _ := sc.MetadataPersistence.GetLastReposFetchTime()
 	since := ""
