@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"math"
+	"net"
 	"time"
 
 	"commits-manager-service/internal/glue/routing"
@@ -15,17 +16,26 @@ import (
 	"commits-manager-service/internal/services/commitsmanagerservice"
 	"commits-manager-service/internal/services/repomanagerservice"
 
+	"commits-manager-service/internal/http/grpc/protos/commits"
+	"commits-manager-service/internal/http/grpc/protos/repos"
+	commitMetaData "commits-manager-service/internal/http/grpc/server/commits"
+	reposMetaData "commits-manager-service/internal/http/grpc/server/repos"
+
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"google.golang.org/grpc"
 
 	"log"
 	"net/http"
 	"os"
 )
 
-const webPort = "80"
+const (
+	webPort  = "80"
+	gRpcPort = "50001"
+)
 
 var counts int64
 
@@ -75,6 +85,33 @@ func main() {
 		Handler: routers.Routes(routesList),
 	}
 	log.Println("server started at port :80")
+
+	go func() {
+		metaDataPersistence := db.NewMetadataPersistence(dbConn)
+
+		lis, err := net.Listen("tcp", fmt.Sprintf(":%s", gRpcPort))
+		if err != nil {
+			log.Fatalf("Failed to listen fot gRpc: %v", err)
+		}
+		s := grpc.NewServer()
+
+		commits.RegisterCommitsMetaDataServiceServer(s,
+			&commitMetaData.CommitsMetaDataServer{
+				MetaDataPersistemce: metaDataPersistence,
+			})
+
+		repos.RegisterRepositoryMetaDataServiceServer(s,
+			&reposMetaData.ReposMetaDataServer{
+				MetaDataPersistemce:   metaDataPersistence,
+				RepositoryPersistence: repositoryPersistence,
+			})
+
+		log.Printf("gRPC Server started on port %s", gRpcPort)
+
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("Failed to listen for gRpc: %v", err)
+		}
+	}()
 
 	err = srv.ListenAndServe()
 	if err != nil {
