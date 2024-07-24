@@ -87,12 +87,15 @@ func (sc *ReposDiscoveryService) pushToQueue(repos []models.RepositoryResponse) 
 		return err
 	}
 
-	j, err := json.MarshalIndent(&repos, "", "\t")
+	j, err := json.MarshalIndent(&event.Payload{
+		Name: "repos",
+		Data: repos,
+	}, "", "\t")
 	if err != nil {
 		return err
 	}
 
-	err = emitter.Push(string(j), constants.REPOS_FETCHED)
+	err = emitter.Push(string(j), constants.REPOS_EVENT)
 	if err != nil {
 		return err
 	}
