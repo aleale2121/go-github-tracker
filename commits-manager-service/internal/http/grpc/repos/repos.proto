@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package repos;
+
+option go_package="/repos";
+
+// Define the RepositoryService service
+service RepositoryService {
+    rpc GetRepositories (GetRepositoriesRequest) returns (GetRepositoriesResponse);
+}
+
+// Define the Repository message
+message Repository {
+  string name = 1;
+  string description = 2;
+  string url = 3;
+  string language = 4;
+  int32 forks_count = 5;
+  int32 stars_count = 6;
+  int32 open_issues_count = 7;
+  int32 watchers_count = 8;
+}
+
+// Define the GetRepositories request message
+message GetRepositoriesRequest {
+}
+
+// Define the GetRepositories response message
+message GetRepositoriesResponse {
+  repeated Repository repositories = 1;
+}
+
+
