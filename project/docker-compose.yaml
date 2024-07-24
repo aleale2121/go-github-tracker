@@ -1,0 +1,78 @@
+version: "3"
+services:
+  postgres:
+    image: "postgres:14-alpine"
+    ports:
+      - "5432:5432"
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: github_tracker
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+
+  adminer:
+    image: adminer
+    ports:
+      - 5053:8080
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+  
+  rabbitmq:
+    image: 'rabbitmq:3.9-alpine'
+    ports:
+      - "5672:5672"
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  commits-manager-service:
+    build:
+      context: ./../commits-manager-service
+      dockerfile: Dockerfile.commit-manager    
+    restart: always
+    ports:
+      - "8081:80"
+    depends_on:
+      - postgres
+    deploy:
+      mode: replicated
+      replicas: 1
+    env_file: "app.env"
+
+  commits-monitor-service:
+    build:
+      context: ./../commits-monitor-service
+      dockerfile: Dockerfile.commit-monitor    
+    restart: always
+    ports:
+      - "8082:80"
+    depends_on:
+      - postgres
+    deploy:
+      mode: replicated
+      replicas: 1
+    env_file: "app.env"
+
+  repo-discovery-service:
+    build:
+      context: ./../repo-discovery-service
+      dockerfile: Dockerfile.repo-discovery    
+    restart: always
+    ports:
+      - "8083:80"
+    depends_on:
+      - postgres
+    deploy:
+      mode: replicated
+      replicas: 1
+    env_file: "app.env"
