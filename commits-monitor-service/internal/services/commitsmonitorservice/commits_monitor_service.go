@@ -113,12 +113,15 @@ func (sc *CommentMonitorService) pushToQueue(commits []models.CommitResponse) er
 		return err
 	}
 
-	j, err := json.MarshalIndent(&commits, "", "\t")
+	j, err := json.MarshalIndent(&event.Payload{
+		Name: "commits",
+		Data: commits,
+	}, "", "\t")
 	if err != nil {
 		return err
 	}
 
-	err = emitter.Push(string(j), constants.COMMITS_FETCHED)
+	err = emitter.Push(string(j), constants.COMMITS_EVENT)
 	if err != nil {
 		return err
 	}

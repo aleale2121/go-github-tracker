@@ -8,7 +8,7 @@ import (
 
 func declareExchange(ch *amqp.Channel) error {
 	return ch.ExchangeDeclare(
-		constants.COMMITS_TOPIC, // name
+		constants.GITHUB_API_TOPIC, // name
 		"topic",                 // type
 		true,                    // durable?
 		false,                   // auto-deleted?
@@ -16,4 +16,9 @@ func declareExchange(ch *amqp.Channel) error {
 		false,                   // no-wait?
 		nil,                     // arguements?
 	)
+}
+
+type Payload struct {
+	Name string `json:"name"`
+	Data any    `json:"data"`
 }
