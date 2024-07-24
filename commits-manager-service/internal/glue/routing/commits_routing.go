@@ -3,7 +3,7 @@ package routing
 import (
 	"net/http"
 
-	h "commits-manager-service/internal/handlers"
+	h "commits-manager-service/internal/http/rest/handlers"
 	"commits-manager-service/platforms/routers"
 )
 

@@ -1,7 +1,7 @@
 package repomanagerservice
 
-import "go-github-tracker/internal/storage/db"
-import "go-github-tracker/internal/constants/models"
+import "commits-manager-service/internal/storage/db"
+import "commits-manager-service/internal/constants/models"
 
 type RepositoryManagerService struct {
 	RepositoryPersistence db.RepositoryPersistence

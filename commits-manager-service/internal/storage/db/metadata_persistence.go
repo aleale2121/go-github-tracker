@@ -2,7 +2,7 @@ package db
 
 import (
 	"database/sql"
-	"go-github-tracker/internal/constants/models"
+	"commits-manager-service/internal/constants/models"
 	"log"
 	"time"
 )

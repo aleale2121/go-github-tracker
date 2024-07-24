@@ -1,12 +1,14 @@
 package event
 
 import (
+	"commits-manager-service/internal/constants"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func declareExchange(ch *amqp.Channel) error {
 	return ch.ExchangeDeclare(
-		"invoice_topic", // name
+		constants.GITHUB_API_TOPIC, // name
 		"topic",         // type
 		true,            // durable?
 		false,           // auto-deleted?

@@ -2,25 +2,23 @@ package main
 
 import (
 	"database/sql"
+	"math"
 	"time"
 
-	"fmt"
-	"commits-manager-service/internal/constants/models"
 	"commits-manager-service/internal/glue/routing"
-	"commits-manager-service/internal/handlers"
-	"commits-manager-service/internal/pkg/githubrestclient"
+	"commits-manager-service/internal/http/rest/handlers"
+	event "commits-manager-service/internal/message-broker/rabbitmq"
 	"commits-manager-service/internal/storage/db"
 	"commits-manager-service/platforms/routers"
+	"fmt"
 
 	"commits-manager-service/internal/services/commitsmanagerservice"
 	"commits-manager-service/internal/services/repomanagerservice"
 
-	"commits-manager-service/internal/services/commitsmonitorservice"
-	"commits-manager-service/internal/services/reposdiscoveryservice"
-
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	amqp "github.com/rabbitmq/amqp091-go"
 
 	"log"
 	"net/http"
@@ -37,10 +35,12 @@ func main() {
 		log.Panic("Can't connect to Postgres!")
 	}
 
-	githubRestClient := githubrestclient.NewGithubRestClient(&models.Config{
-		GithubToken:    os.Getenv("GITHUB_TOKEN"),
-		GithubUsername: os.Getenv("GITHUB_USERNAME"),
-	})
+	rabbitConn, err := connect()
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	defer rabbitConn.Close()
 
 	repositoryPersistence := db.NewRepositoryPersistence(dbConn)
 	repositoryManagerService := repomanagerservice.NewRepositoryManagerService(repositoryPersistence)
@@ -52,20 +52,23 @@ func main() {
 	commitsHandler := handlers.NewCommitsHandler(commitsManagerService)
 	commitsRouting := routing.CommitsRouting(commitsHandler)
 
-	MetaDataPersistence := db.NewMetadataPersistence(dbConn)
-
 	var routesList []routers.Route
 	routesList = append(routesList, repositoriesRouting...)
 	routesList = append(routesList, commitsRouting...)
 
-	commitsMonitorService := commitsmonitorservice.NewCommentMonitorService(repositoryPersistence, commitPersistence,
-		MetaDataPersistence, githubRestClient)
+	consumer, err := event.NewConsumer(rabbitConn)
+	if err != nil {
+		log.Println("Listening for and consuming RabbitMQ messages...")
+		panic(err)
+	}
 
-	reposDiscoveryService := reposdiscoveryservice.NewReposDiscoveryService(repositoryPersistence,
-		MetaDataPersistence, githubRestClient)
-
-	go reposDiscoveryService.ScheduleFetchingRepository(time.Hour * 24)
-	go commitsMonitorService.ScheduleFetchingCommits(time.Hour * 1)
+	// watch the queue and consume events
+	go func(eventConsumer event.Consumer) {
+		err = eventConsumer.Listen([]string{"github.REPOS", "github.COMMITS"})
+		if err != nil {
+			log.Println(err)
+		}
+	}(consumer)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", webPort),
@@ -73,7 +76,7 @@ func main() {
 	}
 	log.Println("server started at port :80")
 
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	if err != nil {
 		log.Panic(err)
 	}
@@ -115,4 +118,35 @@ func connectToDB() *sql.DB {
 		time.Sleep(2 * time.Second)
 		continue
 	}
+}
+
+func connect() (*amqp.Connection, error) {
+	var counts int64
+	var backOff = 1 * time.Second
+	var connection *amqp.Connection
+
+	// don't continue until rabbit is ready
+	for {
+		c, err := amqp.Dial("amqp://guest:guest@rabbitmq")
+		if err != nil {
+			fmt.Println("RabbitMQ not yet ready...")
+			counts++
+		} else {
+			log.Println("Connected to RabbitMQ!")
+			connection = c
+			break
+		}
+
+		if counts > 5 {
+			fmt.Println(err)
+			return nil, err
+		}
+
+		backOff = time.Duration(math.Pow(float64(counts), 2)) * time.Second
+		log.Println("backing off...")
+		time.Sleep(backOff)
+		continue
+	}
+
+	return connection, nil
 }
