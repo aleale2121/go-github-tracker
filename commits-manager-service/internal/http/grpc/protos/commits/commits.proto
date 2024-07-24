@@ -4,7 +4,7 @@ package commits;
 
 option go_package="/commits";
 
-service CommitsService{
+service CommitsMetaDataService{
     rpc GetRepoCommitMetaData (RepoCommitMetaDataRequest) returns (RepoCommitMetaDataResponse);
 }
 
