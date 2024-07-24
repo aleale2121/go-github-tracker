@@ -3,7 +3,7 @@ package githubrestclient
 import (
 	"encoding/json"
 	"fmt"
-	"commits-manager-service/internal/constants/models"
+	"commits-monitor-service/internal/constants/models"
 	"log"
 	"io"
 
