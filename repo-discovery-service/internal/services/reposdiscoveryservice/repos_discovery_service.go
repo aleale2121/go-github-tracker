@@ -1,28 +1,30 @@
 package reposdiscoveryservice
 
 import (
+	"encoding/json"
 	"fmt"
-	"go-github-tracker/internal/constants"
-	"go-github-tracker/internal/constants/models"
-	"go-github-tracker/internal/pkg/githubrestclient"
-	"go-github-tracker/internal/storage/db"
+	"repos-discovery-service/internal/constants"
+	"repos-discovery-service/internal/constants/models"
+	"repos-discovery-service/internal/message-broker/rabbitmq"
+	"repos-discovery-service/internal/pkg/githubrestclient"
+
 	"time"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type ReposDiscoveryService struct {
-	RepositoryPersistence db.RepositoryPersistence
-	MetadataPersistence   db.MetadataPersistence
-	GithubRestClient      githubrestclient.GithubRestClient
+	GithubRestClient githubrestclient.GithubRestClient
+	Rabbit           *amqp.Connection
 }
 
-func NewReposDiscoveryService(repositoryPersistence db.RepositoryPersistence,
-	MetadataPersistence db.MetadataPersistence,
-	GithubRestClient githubrestclient.GithubRestClient,
+func NewReposDiscoveryService(
+	githubRestClient githubrestclient.GithubRestClient,
+	rabbit *amqp.Connection,
 ) ReposDiscoveryService {
 	return ReposDiscoveryService{
-		RepositoryPersistence: repositoryPersistence,
-		MetadataPersistence:   MetadataPersistence,
-		GithubRestClient:      GithubRestClient,
+		GithubRestClient: githubRestClient,
+		Rabbit:           rabbit,
 	}
 }
 
@@ -37,61 +39,82 @@ func (sc *ReposDiscoveryService) ScheduleFetchingRepository(interval time.Durati
 }
 
 func (sc *ReposDiscoveryService) fetchAndSaveRepositories() {
-	fetchTime := time.Now()
-	lastFetchTime, _ := sc.MetadataPersistence.GetLastReposFetchTime()
+	lastFetchTime := time.Date(2024, 7, 1, 1, 1, 1, 1, time.Local)
 	since := ""
 	if !lastFetchTime.IsZero() {
 		since = lastFetchTime.UTC().Format(constants.ISO_8601_TIME_LAYOUT)
 	}
 
-	githubRepositories, err := sc.GithubRestClient.FetchRepositories(since)
+	repositories, err := sc.GithubRestClient.FetchRepositories(since)
 	if err != nil {
 		fmt.Println("Error fetching repositories ")
 		fmt.Println("ERR:", err)
 		return
 	}
-	
-	repositories := make([]models.Repository, len(githubRepositories))
-	for i, repo := range githubRepositories {
-		repositories[i] = ConvertRepositoryResponseToRepository(repo)
-	}
 
-	err = sc.RepositoryPersistence.SaveAllRepositories(repositories)
+	fmt.Println(repositories)
+	sc.pushToQueue(repositories)
+
+	// repositories := make([]models.Repository, len(githubRepositories))
+	// for i, repo := range githubRepositories {
+	// 	repositories[i] = ConvertRepositoryResponseToRepository(repo)
+	// }
+
+	// err = sc.RepositoryPersistence.SaveAllRepositories(repositories)
+	// if err != nil {
+	// 	fmt.Println("Error saving repositories ")
+	// 	fmt.Println("ERR:", err)
+	// 	return
+	// }
+	// if len(repositories) > 0 {
+	// 	err = sc.MetadataPersistence.SaveFetchReposMetadata(models.FetchReposMetadata{
+	// 		FetchedAt: fetchTime,
+	// 		Total:     len(repositories),
+	// 	})
+
+	// 	if err != nil {
+	// 		fmt.Println("Error updating last fetch time ")
+	// 		fmt.Println("ERR:", err)
+	// 		return
+	// 	}
+	// }
+}
+
+// pushToQueue pushes a message into RabbitMQ
+func (sc *ReposDiscoveryService) pushToQueue(repos []models.RepositoryResponse) error {
+	emitter, err := event.NewEventEmitter(sc.Rabbit)
 	if err != nil {
-		fmt.Println("Error saving repositories ")
-		fmt.Println("ERR:", err)
-		return
+		return err
 	}
-	if len(repositories) > 0 {
-		err = sc.MetadataPersistence.SaveFetchReposMetadata(models.FetchReposMetadata{
-			FetchedAt: fetchTime,
-			Total:     len(repositories),
-		})
 
-		if err != nil {
-			fmt.Println("Error updating last fetch time ")
-			fmt.Println("ERR:", err)
-			return
-		}
+	j, err := json.MarshalIndent(&repos, "", "\t")
+	if err != nil {
+		return err
 	}
+
+	err = emitter.Push(string(j), constants.REPOS_FETCHED)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func ConvertRepositoryResponseToRepository(response models.RepositoryResponse) models.Repository {
-	description := ""
-	if response.Description != nil {
-		description = response.Description.(string)
-	}
+// func ConvertRepositoryResponseToRepository(response models.RepositoryResponse) models.Repository {
+// 	description := ""
+// 	if response.Description != nil {
+// 		description = response.Description.(string)
+// 	}
 
-	return models.Repository{
-		Name:            response.Name,
-		Description:     description,
-		URL:             response.HTMLURL,
-		Language:        response.Language,
-		ForksCount:      response.ForksCount,
-		StarsCount:      response.StargazersCount,
-		OpenIssuesCount: response.OpenIssuesCount,
-		WatchersCount:   response.WatchersCount,
-		CreatedAt:       response.CreatedAt,
-		UpdatedAt:       response.UpdatedAt,
-	}
-}
+// 	return models.Repository{
+// 		Name:            response.Name,
+// 		Description:     description,
+// 		URL:             response.HTMLURL,
+// 		Language:        response.Language,
+// 		ForksCount:      response.ForksCount,
+// 		StarsCount:      response.StargazersCount,
+// 		OpenIssuesCount: response.OpenIssuesCount,
+// 		WatchersCount:   response.WatchersCount,
+// 		CreatedAt:       response.CreatedAt,
+// 		UpdatedAt:       response.UpdatedAt,
+// 	}
+// }

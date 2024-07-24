@@ -1,12 +1,13 @@
 package event
 
 import (
+	"repos-discovery-service/internal/constants"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func declareExchange(ch *amqp.Channel) error {
 	return ch.ExchangeDeclare(
-		"invoice_topic", // name
+		constants.REPOS_TOPIC, // name
 		"topic",         // type
 		true,            // durable?
 		false,           // auto-deleted?
