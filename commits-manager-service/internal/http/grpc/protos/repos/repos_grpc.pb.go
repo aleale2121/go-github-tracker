@@ -18,86 +18,123 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// RepositoryServiceClient is the client API for RepositoryService service.
+// RepositoryMetaDataServiceClient is the client API for RepositoryMetaDataService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RepositoryServiceClient interface {
+type RepositoryMetaDataServiceClient interface {
 	GetRepositories(ctx context.Context, in *GetRepositoriesRequest, opts ...grpc.CallOption) (*GetRepositoriesResponse, error)
+	AllRepositoriesMetaData(ctx context.Context, in *AllReposMetaDataRequest, opts ...grpc.CallOption) (*AllReposMetaDataResponse, error)
 }
 
-type repositoryServiceClient struct {
+type repositoryMetaDataServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRepositoryServiceClient(cc grpc.ClientConnInterface) RepositoryServiceClient {
-	return &repositoryServiceClient{cc}
+func NewRepositoryMetaDataServiceClient(cc grpc.ClientConnInterface) RepositoryMetaDataServiceClient {
+	return &repositoryMetaDataServiceClient{cc}
 }
 
-func (c *repositoryServiceClient) GetRepositories(ctx context.Context, in *GetRepositoriesRequest, opts ...grpc.CallOption) (*GetRepositoriesResponse, error) {
+func (c *repositoryMetaDataServiceClient) GetRepositories(ctx context.Context, in *GetRepositoriesRequest, opts ...grpc.CallOption) (*GetRepositoriesResponse, error) {
 	out := new(GetRepositoriesResponse)
-	err := c.cc.Invoke(ctx, "/repos.RepositoryService/GetRepositories", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/repos.RepositoryMetaDataService/GetRepositories", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// RepositoryServiceServer is the server API for RepositoryService service.
-// All implementations must embed UnimplementedRepositoryServiceServer
+func (c *repositoryMetaDataServiceClient) AllRepositoriesMetaData(ctx context.Context, in *AllReposMetaDataRequest, opts ...grpc.CallOption) (*AllReposMetaDataResponse, error) {
+	out := new(AllReposMetaDataResponse)
+	err := c.cc.Invoke(ctx, "/repos.RepositoryMetaDataService/AllRepositoriesMetaData", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RepositoryMetaDataServiceServer is the server API for RepositoryMetaDataService service.
+// All implementations must embed UnimplementedRepositoryMetaDataServiceServer
 // for forward compatibility
-type RepositoryServiceServer interface {
+type RepositoryMetaDataServiceServer interface {
 	GetRepositories(context.Context, *GetRepositoriesRequest) (*GetRepositoriesResponse, error)
-	mustEmbedUnimplementedRepositoryServiceServer()
+	AllRepositoriesMetaData(context.Context, *AllReposMetaDataRequest) (*AllReposMetaDataResponse, error)
+	mustEmbedUnimplementedRepositoryMetaDataServiceServer()
 }
 
-// UnimplementedRepositoryServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedRepositoryServiceServer struct {
+// UnimplementedRepositoryMetaDataServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedRepositoryMetaDataServiceServer struct {
 }
 
-func (UnimplementedRepositoryServiceServer) GetRepositories(context.Context, *GetRepositoriesRequest) (*GetRepositoriesResponse, error) {
+func (UnimplementedRepositoryMetaDataServiceServer) GetRepositories(context.Context, *GetRepositoriesRequest) (*GetRepositoriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRepositories not implemented")
 }
-func (UnimplementedRepositoryServiceServer) mustEmbedUnimplementedRepositoryServiceServer() {}
+func (UnimplementedRepositoryMetaDataServiceServer) AllRepositoriesMetaData(context.Context, *AllReposMetaDataRequest) (*AllReposMetaDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AllRepositoriesMetaData not implemented")
+}
+func (UnimplementedRepositoryMetaDataServiceServer) mustEmbedUnimplementedRepositoryMetaDataServiceServer() {
+}
 
-// UnsafeRepositoryServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RepositoryServiceServer will
+// UnsafeRepositoryMetaDataServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RepositoryMetaDataServiceServer will
 // result in compilation errors.
-type UnsafeRepositoryServiceServer interface {
-	mustEmbedUnimplementedRepositoryServiceServer()
+type UnsafeRepositoryMetaDataServiceServer interface {
+	mustEmbedUnimplementedRepositoryMetaDataServiceServer()
 }
 
-func RegisterRepositoryServiceServer(s grpc.ServiceRegistrar, srv RepositoryServiceServer) {
-	s.RegisterService(&RepositoryService_ServiceDesc, srv)
+func RegisterRepositoryMetaDataServiceServer(s grpc.ServiceRegistrar, srv RepositoryMetaDataServiceServer) {
+	s.RegisterService(&RepositoryMetaDataService_ServiceDesc, srv)
 }
 
-func _RepositoryService_GetRepositories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RepositoryMetaDataService_GetRepositories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRepositoriesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RepositoryServiceServer).GetRepositories(ctx, in)
+		return srv.(RepositoryMetaDataServiceServer).GetRepositories(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/repos.RepositoryService/GetRepositories",
+		FullMethod: "/repos.RepositoryMetaDataService/GetRepositories",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoryServiceServer).GetRepositories(ctx, req.(*GetRepositoriesRequest))
+		return srv.(RepositoryMetaDataServiceServer).GetRepositories(ctx, req.(*GetRepositoriesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// RepositoryService_ServiceDesc is the grpc.ServiceDesc for RepositoryService service.
+func _RepositoryMetaDataService_AllRepositoriesMetaData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AllReposMetaDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryMetaDataServiceServer).AllRepositoriesMetaData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/repos.RepositoryMetaDataService/AllRepositoriesMetaData",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryMetaDataServiceServer).AllRepositoriesMetaData(ctx, req.(*AllReposMetaDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// RepositoryMetaDataService_ServiceDesc is the grpc.ServiceDesc for RepositoryMetaDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RepositoryService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "repos.RepositoryService",
-	HandlerType: (*RepositoryServiceServer)(nil),
+var RepositoryMetaDataService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "repos.RepositoryMetaDataService",
+	HandlerType: (*RepositoryMetaDataServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetRepositories",
-			Handler:    _RepositoryService_GetRepositories_Handler,
+			Handler:    _RepositoryMetaDataService_GetRepositories_Handler,
+		},
+		{
+			MethodName: "AllRepositoriesMetaData",
+			Handler:    _RepositoryMetaDataService_AllRepositoriesMetaData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

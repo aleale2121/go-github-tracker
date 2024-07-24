@@ -5,8 +5,9 @@ package repos;
 option go_package="/repos";
 
 // Define the RepositoryService service
-service RepositoryService {
+service RepositoryMetaDataService {
     rpc GetRepositories (GetRepositoriesRequest) returns (GetRepositoriesResponse);
+    rpc AllRepositoriesMetaData (AllReposMetaDataRequest) returns (AllReposMetaDataResponse);
 }
 
 // Define the Repository message
@@ -28,6 +29,12 @@ message GetRepositoriesRequest {
 // Define the GetRepositories response message
 message GetRepositoriesResponse {
   repeated Repository repositories = 1;
+}
+
+message AllReposMetaDataRequest{}
+
+message AllReposMetaDataResponse{
+  string lastFetchTime = 1;
 }
 
 
