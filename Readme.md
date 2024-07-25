@@ -2,29 +2,97 @@
 
 ## Project Overview
 
-This service is built in Go and interacts with GitHub's public APIs to fetch repository and commit data. It stores this data in a PostgreSQL database and continuously monitors for changes.
+This project comprises three microservices designed to fetch, store, and monitor GitHub repository and commit data. The microservices interact with each other via gRPC and RabbitMQ to maintain a consistent and up-to-date database.
+
+## Microservices Overview
+
+### 1. Commits Manager Service
+
+- **Functionality**:
+  - Provides REST APIs and database implementations for repository and commit metadata.
+  - Uses RabbitMQ to listen for new repository and new commit fetched events.
+  - Runs a gRPC server to handle metadata queries from other microservices.
+  
+- **Responsibilities**:
+  - Maintain the primary database.
+  - Process events related to repository and commit updates.
+  - Serve metadata to other services via gRPC.
+
+### 2. Repos Discovery Service
+
+- **Functionality**:
+  - Periodically fetches new repositories from GitHub.
+  - Sends repository fetched events to the Commits Manager Service.
+  - Retrieves the last repository fetch time via gRPC from the Commits Manager Service.
+  
+- **Responsibilities**:
+  - Discover new repositories.
+  - Ensure the Commits Manager Service is updated with the latest repository information.
+
+### 3. Commits Monitor Service
+
+- **Functionality**:
+  - Periodically fetches new commits for all repositories from GitHub.
+  - Sends commit fetched events to the Commits Manager Service.
+  - Retrieves all repositories and the last commit fetch time via gRPC from the Commits Manager Service.
+  
+- **Responsibilities**:
+  - Monitor and fetch new commits for existing repositories.
+  - Ensure the Commits Manager Service is updated with the latest commit information.
 
 ## Implementation Details
 
-### Fetching GitHub API Data
+### Commits Manager Service
 
-- **Commits:**
-  - Fetches commit message, author, date, and URL.
-  - Saves data in PostgreSQL to ensure commits in the database mirror those on GitHub.
-  - Uses a configurable date to start fetching commits and allows resetting the collection.
+- **REST APIs**:
+  - For CRUD operations on repository and commit metadata.
+  
+- **Database**:
+  - PostgreSQL tables for repositories and commits.
+  
+- **Message Broker**:
+  - RabbitMQ to handle new repository and commit fetched events.
+  
+- **gRPC Server**:
+  - To allow other microservices to query metadata.
 
-- **Repository Metadata:**
-  - Stores repository details such as name, description, URL, language, forks count, stars count, open issues count, watchers count, and creation/update dates.
+### Repos Discovery Service
+
+- **GitHub API Interaction**:
+  - Fetches new repositories from GitHub.
+  
+- **Event Publishing**:
+  - Publishes repository fetched events to RabbitMQ.
+  
+- **gRPC Client**:
+  - Retrieves the last repository fetch time from the Commits Manager Service.
+
+### Commits Monitor Service
+
+- **GitHub API Interaction**:
+  - Fetches new commits for repositories from GitHub.
+  
+- **Event Publishing**:
+  - Publishes commit fetched events to RabbitMQ.
+  
+- **gRPC Client**:
+  - Retrieves all repositories and the last commit fetch time from the Commits Manager Service.
 
 ### Data Storage
 
-- Data is stored in PostgreSQL with tables for repositories, commits, and metadata.
-- Efficient querying ensures performance and scalability.
+- **Repositories Table**:
+  - Stores repository details such as name, description, URL, language, forks count, stars count, open issues count, watchers count, and creation/update dates.
+
+- **Commits Table**:
+  - Stores commit details such as SHA, URL, message, author name, author date, creation/update dates, and the associated repository name.
 
 ### Scheduling
 
-- The service uses Go's `time.Ticker` to schedule data fetching at regular intervals (e.g., every hour).
-- Prevents duplicate commits by comparing fetched data with existing records in the database.
+- **Periodic Fetching**:
+  - The Repos Discovery Service and Commits Monitor Service use Go's `time.Ticker` to schedule data fetching at regular intervals.
+  
+- **Duplicate Prevention**:
+  - Ensures no duplicate commits by comparing fetched data with existing records in the database.
 
 ### Endpoints
 
