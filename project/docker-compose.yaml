@@ -28,7 +28,7 @@ services:
         condition: on-failure
   
   rabbitmq:
-    image: 'rabbitmq:3.9-alpine'
+    image: 'rabbitmq:4.0-rc-alpine'
     ports:
       - "5672:5672"
     deploy:
@@ -44,6 +44,7 @@ services:
       - "8081:80"
     depends_on:
       - postgres
+      - rabbitmq
     deploy:
       mode: replicated
       replicas: 1
@@ -54,10 +55,9 @@ services:
       context: ./../commits-monitor-service
       dockerfile: Dockerfile.commit-monitor    
     restart: always
-    ports:
-      - "8082:80"
     depends_on:
-      - postgres
+      - rabbitmq
+      - commits-manager-service
     deploy:
       mode: replicated
       replicas: 1
@@ -68,10 +68,9 @@ services:
       context: ./../repo-discovery-service
       dockerfile: Dockerfile.repo-discovery    
     restart: always
-    ports:
-      - "8083:80"
     depends_on:
-      - postgres
+      - rabbitmq
+      - commits-manager-service
     deploy:
       mode: replicated
       replicas: 1
