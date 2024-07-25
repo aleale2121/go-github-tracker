@@ -9,7 +9,7 @@ import (
 	"commits-monitor-service/internal/message-broker/rabbitmq"
 	"commits-monitor-service/internal/pkg/githubrestclient"
 	"encoding/json"
-	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -38,14 +38,8 @@ func NewCommentMonitorService(
 }
 
 func (sc *CommentMonitorService) ScheduleFetchingCommits(interval time.Duration) {
-	// Wait 1 minute for first repository fetch
-	timer := time.After(60 * time.Second)
-	<-timer
-
-	// Start Fetching Commits
-	fmt.Println("Fetching Commits Started ")
+	log.Println("Fetching Commits Started ")
 	sc.fetchAndSaveCommits()
-
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for range ticker.C {
@@ -57,11 +51,11 @@ func (sc *CommentMonitorService) fetchAndSaveCommits() {
 	fetchTime := time.Now()
 	repositories, err := sc.ReposMetaDataServiceClient.GetRepositories()
 	if err != nil {
-		fmt.Println("CM Error getting repositories")
-		fmt.Println("CM ERR:", err)
+		log.Println("CM Error getting repositories")
+		log.Println("CM ERR:", err)
 		return
 	}
-
+	log.Printf("CM: fetching commits of %d repositories\n", len(repositories))
 	var wg sync.WaitGroup
 	for _, repo := range repositories {
 		wg.Add(1)
@@ -74,20 +68,25 @@ func (sc *CommentMonitorService) fetchAndSaveCommits() {
 }
 
 func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo *repos.Repository, fetchTime time.Time) {
-	lastFetchTime, _ := sc.CommitsMetaDataServiceClient.GetRepoLastFetchTime(repo.Name)
-	since := ""
-	if !(lastFetchTime == "") {
-		since = lastFetchTime
+	since, err := sc.CommitsMetaDataServiceClient.GetRepoLastFetchTime(repo.Name)
+	if err != nil {
+		log.Println("Error getting a repository last commit fetch time")
+		log.Println("ERR:", err)
 	}
 
+	if since == "0001-01-01T00:00:00Z" {
+		since = ""
+	}
+
+	log.Printf("repo <%s> last fetched: %s\n", repo.Name, since)
 	commits, err := sc.GithubRestClient.FetchCommits(repo.Name, since)
 	if err != nil {
-		fmt.Println("CM Error fetching commits of ", repo.Name)
-		fmt.Println("CM ERR:", err)
+		log.Println("CM Error fetching commits of ", repo.Name)
+		log.Println("CM ERR:", err)
 		return
 	}
 
-	fmt.Println(repo, " total commits ->", len(commits))
+	log.Printf("repo <%s>  total commits: %d\n", repo.Name, len(commits))
 	sc.pushToQueue(repo.Name, fetchTime, commits)
 
 }
@@ -101,11 +100,7 @@ func (sc *CommentMonitorService) pushToQueue(repoName string, fetchTime time.Tim
 
 	j, err := json.MarshalIndent(&event.Payload{
 		Name: "commits",
-		Data: struct {
-			Repository string
-			FetchTime  time.Time
-			Commits    []models.CommitResponse
-		}{
+		Data: CommitMetaData{
 			Repository: repoName,
 			FetchTime:  fetchTime,
 			Commits:    commits,
@@ -120,4 +115,10 @@ func (sc *CommentMonitorService) pushToQueue(repoName string, fetchTime time.Tim
 		return err
 	}
 	return nil
+}
+
+type CommitMetaData struct {
+	Repository string  
+	FetchTime  time.Time
+	Commits    []models.CommitResponse
 }
