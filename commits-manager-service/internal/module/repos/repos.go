@@ -1,4 +1,4 @@
-package repomanagerservice
+package repos
 
 import "commits-manager-service/internal/storage/db"
 import "commits-manager-service/internal/constants/models"
