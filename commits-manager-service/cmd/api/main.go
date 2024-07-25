@@ -62,11 +62,14 @@ func main() {
 	commitsHandler := handlers.NewCommitsHandler(commitsManagerService)
 	commitsRouting := routing.CommitsRouting(commitsHandler)
 
+	metaDataPersistence := db.NewMetadataPersistence(dbConn)
+
 	var routesList []routers.Route
 	routesList = append(routesList, repositoriesRouting...)
 	routesList = append(routesList, commitsRouting...)
 
-	consumer, err := event.NewConsumer(rabbitConn)
+	consumer, err := event.NewConsumer(rabbitConn, "githubApiQueue",
+		metaDataPersistence, commitPersistence, repositoryPersistence)
 	if err != nil {
 		log.Println("Listening for and consuming RabbitMQ messages...")
 		panic(err)
