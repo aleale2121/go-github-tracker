@@ -13,8 +13,8 @@ import (
 	"commits-manager-service/platforms/routers"
 	"fmt"
 
-	"commits-manager-service/internal/services/commitsmanagerservice"
-	"commits-manager-service/internal/services/repomanagerservice"
+	cm "commits-manager-service/internal/module/commits"
+	rm "commits-manager-service/internal/module/repos"
 
 	"commits-manager-service/internal/http/grpc/protos/commits"
 	"commits-manager-service/internal/http/grpc/protos/repos"
@@ -53,12 +53,12 @@ func main() {
 	defer rabbitConn.Close()
 
 	repositoryPersistence := db.NewRepositoryPersistence(dbConn)
-	repositoryManagerService := repomanagerservice.NewRepositoryManagerService(repositoryPersistence)
+	repositoryManagerService := rm.NewRepositoryManagerService(repositoryPersistence)
 	repositoriesHandler := handlers.NewRepositoriesHandler(repositoryManagerService)
 	repositoriesRouting := routing.RepositoriesRouting(repositoriesHandler)
 
 	commitPersistence := db.NewCommitPersistence(dbConn)
-	commitsManagerService := commitsmanagerservice.NewCommitsManagerService(commitPersistence)
+	commitsManagerService := cm.NewCommitsManagerService(commitPersistence)
 	commitsHandler := handlers.NewCommitsHandler(commitsManagerService)
 	commitsRouting := routing.CommitsRouting(commitsHandler)
 
