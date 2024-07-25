@@ -5,16 +5,16 @@ import (
 	"net/http"
 	"strconv"
 
-	"commits-manager-service/internal/services/commitsmanagerservice"
+	"commits-manager-service/internal/module/commits"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type CommitsHandler struct {
-	CommitsManagerService commitsmanagerservice.CommitsManagerService
+	CommitsManagerService commits.CommitsManagerService
 }
 
-func NewCommitsHandler(commitPersistence commitsmanagerservice.CommitsManagerService) *CommitsHandler {
+func NewCommitsHandler(commitPersistence commits.CommitsManagerService) *CommitsHandler {
 	return &CommitsHandler{
 		CommitsManagerService: commitPersistence,
 	}

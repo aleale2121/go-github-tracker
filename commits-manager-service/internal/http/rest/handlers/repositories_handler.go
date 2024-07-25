@@ -4,16 +4,16 @@ import (
 	"errors"
 	"net/http"
 
-	"commits-manager-service/internal/services/repomanagerservice"
+	"commits-manager-service/internal/module/repos"
 
 )
 
 type RepositoriesHandler struct {
-	RepositoryPersistence repomanagerservice.RepositoryManagerService
+	RepositoryPersistence repos.RepositoryManagerService
 	
 }
 
-func NewRepositoriesHandler(repositoryPersistence repomanagerservice.RepositoryManagerService) *RepositoriesHandler {
+func NewRepositoriesHandler(repositoryPersistence repos.RepositoryManagerService) *RepositoriesHandler {
 	return &RepositoriesHandler{
 		RepositoryPersistence: repositoryPersistence,
 	}
