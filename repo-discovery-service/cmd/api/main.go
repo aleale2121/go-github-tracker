@@ -2,7 +2,9 @@ package main
 
 import (
 	"repos-discovery-service/internal/constants/models"
+	"repos-discovery-service/internal/http/grpc/client/repos"
 	"repos-discovery-service/internal/pkg/githubrestclient"
+
 	"fmt"
 	"math"
 	"time"
@@ -14,6 +16,8 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
+
+const commitMangerUrl = "commits-manager-service:50001"
 
 func main() {
 
@@ -30,9 +34,16 @@ func main() {
 		GithubUsername: os.Getenv("GITHUB_USERNAME"),
 	})
 
-	reposdiscoveryservice := reposdiscoveryservice.NewReposDiscoveryService(githubRestClient, rabbitConn)
+	reposMetaDataServiceClient := repos.NewReposMetaDataServiceClient(commitMangerUrl)
+	reposdiscoveryservice := reposdiscoveryservice.NewReposDiscoveryService(githubRestClient,
+		*reposMetaDataServiceClient,
+		rabbitConn)
 
 	wait := make(chan bool)
+
+	// Wait one minute until commit-manager service started
+    timer := time.After(30 * time.Second)
+	<-timer
 
 	go reposdiscoveryservice.ScheduleFetchingRepository(time.Hour * 1)
 
