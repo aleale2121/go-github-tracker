@@ -3,6 +3,9 @@ package commitsmonitorservice
 import (
 	"commits-monitor-service/internal/constants"
 	"commits-monitor-service/internal/constants/models"
+	cmdsc "commits-monitor-service/internal/http/grpc/client/commits"
+	rmdsc "commits-monitor-service/internal/http/grpc/client/repos"
+	"commits-monitor-service/internal/http/grpc/protos/repos"
 	"commits-monitor-service/internal/message-broker/rabbitmq"
 	"commits-monitor-service/internal/pkg/githubrestclient"
 	"encoding/json"
@@ -14,17 +17,23 @@ import (
 )
 
 type CommentMonitorService struct {
-	GithubRestClient githubrestclient.GithubRestClient
-	Rabbit           *amqp.Connection
+	GithubRestClient             githubrestclient.GithubRestClient
+	ReposMetaDataServiceClient   rmdsc.ReposMetaDataServiceClient
+	CommitsMetaDataServiceClient cmdsc.CommitsMetaDataServiceClient
+	Rabbit                       *amqp.Connection
 }
 
 func NewCommentMonitorService(
 	githubRestClient githubrestclient.GithubRestClient,
+	reposMetaDataServiceClient rmdsc.ReposMetaDataServiceClient,
+	commitsMetaDataServiceClient cmdsc.CommitsMetaDataServiceClient,
 	rabbit *amqp.Connection,
 ) CommentMonitorService {
 	return CommentMonitorService{
-		GithubRestClient: githubRestClient,
-		Rabbit:           rabbit,
+		GithubRestClient:             githubRestClient,
+		ReposMetaDataServiceClient:   reposMetaDataServiceClient,
+		CommitsMetaDataServiceClient: commitsMetaDataServiceClient,
+		Rabbit:                       rabbit,
 	}
 }
 
@@ -46,30 +55,29 @@ func (sc *CommentMonitorService) ScheduleFetchingCommits(interval time.Duration)
 
 func (sc *CommentMonitorService) fetchAndSaveCommits() {
 	fetchTime := time.Now()
-	repositories := []*models.Repository{}
-	// if err != nil {
-	// 	fmt.Println("CM Error getting repositories")
-	// 	fmt.Println("CM ERR:", err)
-	// 	return
-	// }
+	repositories, err := sc.ReposMetaDataServiceClient.GetRepositories()
+	if err != nil {
+		fmt.Println("CM Error getting repositories")
+		fmt.Println("CM ERR:", err)
+		return
+	}
 
 	var wg sync.WaitGroup
 	for _, repo := range repositories {
 		wg.Add(1)
-		go func(repo models.Repository) {
+		go func(repo *repos.Repository) {
 			defer wg.Done()
 			sc.fetchAndSaveCommitsForRepo(repo, fetchTime)
-		}(*repo)
+		}(repo)
 	}
 	wg.Wait()
 }
 
-func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo models.Repository, fetchTime time.Time) {
-	// lastFetchTime, _ := sc.MetadataPersistence.GetLastCommitFetchTime(repo.Name)
-	lastFetchTime := time.Date(2024, 7, 1, 1, 1, 1, 1, time.Local)
+func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo *repos.Repository, fetchTime time.Time) {
+	lastFetchTime, _ := sc.CommitsMetaDataServiceClient.GetRepoLastFetchTime(repo.Name)
 	since := ""
-	if !lastFetchTime.IsZero() {
-		since = lastFetchTime.UTC().Format(constants.ISO_8601_TIME_LAYOUT)
+	if !(lastFetchTime == "") {
+		since = lastFetchTime
 	}
 
 	commits, err := sc.GithubRestClient.FetchCommits(repo.Name, since)
@@ -78,36 +86,14 @@ func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo models.Reposito
 		fmt.Println("CM ERR:", err)
 		return
 	}
-	// commits := make([]models.Commit, len(fetchedCommits))
-	// for i, commit := range fetchedCommits {
-	// 	commits[i] = ConvertCommitResponseToCommit(commit, repo.Name)
-	// }
-	fmt.Println(commits)
-	sc.pushToQueue(commits)
-	// err = sc.CommitPersistence.SaveAllCommits(commits)
-	// if err != nil {
-	// 	fmt.Println("CM Error saving commits of ", repo.Name)
-	// 	fmt.Println("CM ERR:", err)
-	// 	return
-	// }
 
-	// if len(commits) > 0 {
-	// 	err = sc.MetadataPersistence.SaveFetchCommitsMetadata(models.FetchCommitsMetadata{
-	// 		RepositoryName: repo.Name,
-	// 		FetchedAt:      fetchTime,
-	// 		Total:          len(commits),
-	// 	})
+	fmt.Println(repo, " total commits ->", len(commits))
+	sc.pushToQueue(repo.Name, fetchTime, commits)
 
-	// 	if err != nil {
-	// 		fmt.Println("CM Error updating last commit fetch time ", repo.Name)
-	// 		fmt.Println("CM ERR:", err)
-	// 		return
-	// 	}
-	// }
 }
 
 // pushToQueue pushes a message into RabbitMQ
-func (sc *CommentMonitorService) pushToQueue(commits []models.CommitResponse) error {
+func (sc *CommentMonitorService) pushToQueue(repoName string, fetchTime time.Time, commits []models.CommitResponse) error {
 	emitter, err := event.NewEventEmitter(sc.Rabbit)
 	if err != nil {
 		return err
@@ -115,7 +101,15 @@ func (sc *CommentMonitorService) pushToQueue(commits []models.CommitResponse) er
 
 	j, err := json.MarshalIndent(&event.Payload{
 		Name: "commits",
-		Data: commits,
+		Data: struct {
+			Repository string
+			FetchTime  time.Time
+			Commits    []models.CommitResponse
+		}{
+			Repository: repoName,
+			FetchTime:  fetchTime,
+			Commits:    commits,
+		},
 	}, "", "\t")
 	if err != nil {
 		return err
@@ -127,16 +121,3 @@ func (sc *CommentMonitorService) pushToQueue(commits []models.CommitResponse) er
 	}
 	return nil
 }
-
-// func ConvertCommitResponseToCommit(response models.CommitResponse, repositoryName string) models.Commit {
-// 	return models.Commit{
-// 		SHA:            response.Sha,
-// 		URL:            response.URL,
-// 		Message:        response.Commit.Message,
-// 		AuthorName:     response.Commit.Author.Name,
-// 		AuthorDate:     response.Commit.Author.Date,
-// 		CreatedAt:      response.Commit.Author.Date,
-// 		UpdatedAt:      response.Commit.Committer.Date,
-// 		RepositoryName: repositoryName,
-// 	}
-// }

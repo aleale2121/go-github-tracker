@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package commits;
+
+option go_package="/commits";
+
+service CommitsMetaDataService{
+    rpc GetRepoCommitMetaData (RepoCommitMetaDataRequest) returns (RepoCommitMetaDataResponse);
+}
+
+
+message RepoCommitMetaDataRequest{
+    string repositoryName = 1;
+}
+
+message RepoCommitMetaDataResponse{
+    string lastFetchTime = 1;
+}

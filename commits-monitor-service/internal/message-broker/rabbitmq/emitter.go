@@ -1,6 +1,7 @@
 package event
 
 import (
+	"commits-monitor-service/internal/constants"
 	"log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -30,7 +31,7 @@ func (e *Emitter) Push(event string, severity string) error {
 	log.Println("Pushing to channel")
 
 	err = channel.Publish(
-		"invoice_topic",
+		constants.GITHUB_API_TOPIC,
 		severity,
 		false,
 		false,

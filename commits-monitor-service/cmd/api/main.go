@@ -2,6 +2,8 @@ package main
 
 import (
 	"commits-monitor-service/internal/constants/models"
+	"commits-monitor-service/internal/http/grpc/client/commits"
+	"commits-monitor-service/internal/http/grpc/client/repos"
 	"commits-monitor-service/internal/pkg/githubrestclient"
 	"fmt"
 	"math"
@@ -14,6 +16,8 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
+
+const commitMangerUrl = ""
 
 func main() {
 
@@ -30,7 +34,10 @@ func main() {
 		GithubUsername: os.Getenv("GITHUB_USERNAME"),
 	})
 
-	commitsMonitorService := commitsmonitorservice.NewCommentMonitorService(githubRestClient, rabbitConn)
+	commitMetaDataServiceClient := commits.NewCommitsMetaDataServiceClient(commitMangerUrl)
+	reposMetaDataServiceClient := repos.NewReposMetaDataServiceClient(commitMangerUrl)
+	commitsMonitorService := commitsmonitorservice.NewCommentMonitorService(githubRestClient,
+		*reposMetaDataServiceClient, *commitMetaDataServiceClient, rabbitConn)
 
 	wait := make(chan bool)
 
