@@ -1,4 +1,4 @@
-package commitsmanagerservice
+package commits
 
 import "commits-manager-service/internal/storage/db"
 import "commits-manager-service/internal/constants/models"
