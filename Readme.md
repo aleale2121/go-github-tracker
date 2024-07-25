@@ -45,11 +45,20 @@ This service is built in Go and interacts with GitHub's public APIs to fetch rep
 
 ### Unit Tests
 
-- Unit tests are included to validate core functionalities, such as data fetching and persistence.
+- Unit tests are included to validate core functionalities,of data persistence in
+commits-manager-service.
+- To run unit tests
+  - change you directory to commits-manager-service and run
+
+    ```bash
+    go test  -v -cover -short  ./...
+    ```
 
 ## Setup and Usage
 
 1. **Update Environment Variables:**
+
+    - change you directory to project folder
 
     - Update `app.env` with your GitHub token and username:
 
