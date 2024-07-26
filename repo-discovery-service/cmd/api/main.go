@@ -41,11 +41,11 @@ func main() {
 
 	wait := make(chan bool)
 
-	// Wait one minute until commit-manager service started
+	// Wait 30 seconds until commit-manager service started
     timer := time.After(30 * time.Second)
 	<-timer
 
-	go reposdiscoveryservice.ScheduleFetchingRepository(time.Hour * 1)
+	go reposdiscoveryservice.ScheduleFetchingRepository(time.Hour * 24)
 
 	<-wait
 
