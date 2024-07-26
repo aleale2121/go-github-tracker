@@ -35,7 +35,7 @@ func (h *CommitsHandler) GetAllCommits(w http.ResponseWriter, r *http.Request) {
 		Data:    commits,
 	}
 
-	writeJSON(w, http.StatusAccepted, payload)
+	writeJSON(w, http.StatusOK, payload)
 }
 
 func (h *CommitsHandler) GetTopCommitAuthors(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +58,7 @@ func (h *CommitsHandler) GetTopCommitAuthors(w http.ResponseWriter, r *http.Requ
 		Data:    authors,
 	}
 
-	writeJSON(w, http.StatusAccepted, payload)
+	writeJSON(w, http.StatusOK, payload)
 }
 
 func (h *CommitsHandler) GetTopCommitAuthorsByRepo(w http.ResponseWriter, r *http.Request) {
@@ -82,5 +82,5 @@ func (h *CommitsHandler) GetTopCommitAuthorsByRepo(w http.ResponseWriter, r *htt
 		Data:    authors,
 	}
 
-	writeJSON(w, http.StatusAccepted, payload)
+	writeJSON(w, http.StatusOK, payload)
 }

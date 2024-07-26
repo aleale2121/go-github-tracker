@@ -32,5 +32,5 @@ func (h *RepositoriesHandler) GetAllRepositories(w http.ResponseWriter, r *http.
 		Data:    repositories,
 	}
 
-	writeJSON(w, http.StatusAccepted, payload)
+	writeJSON(w, http.StatusOK, payload)
 }
