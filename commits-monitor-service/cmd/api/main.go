@@ -42,7 +42,7 @@ func main() {
 	wait := make(chan bool)
 
 	// Wait 1 minute for first repository fetch
-	timer := time.After(80 * time.Second)
+	timer := time.After(60 * time.Second)
 	<-timer
 
 	go commitsMonitorService.ScheduleFetchingCommits(time.Hour * 1)
