@@ -7,13 +7,20 @@ import (
 	"time"
 )
 
+type MetadataRepository interface {
+	SaveFetchReposMetadata(metadata models.FetchReposMetadata) error
+	SaveFetchCommitsMetadata(metadata models.FetchCommitsMetadata) error
+	GetLastReposFetchTime() (time.Time, error)
+	GetLastCommitFetchTime(repositoryName string) (time.Time, error)
+}
+
 type MetadataPersistence struct {
 	db *sql.DB
 }
 
 // NewMetadataPersistence creates an instance of the MetadataPersistence.
-func NewMetadataPersistence(dbPool *sql.DB) MetadataPersistence {
-	return MetadataPersistence{db: dbPool}
+func NewMetadataPersistence(dbPool *sql.DB) MetadataRepository {
+	return &MetadataPersistence{db: dbPool}
 }
 
 // SaveFetchReposMetadata saves metadata for fetching repositories.
