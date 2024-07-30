@@ -10,8 +10,8 @@ import (
 )
 
 
-var repositoryQueries db.RepositoryPersistence
-var commitsQueries db.CommitPersistence
+var repositoryQueries db.GitReposRepository
+var commitsQueries db.CommitRepository
 
 func TestMain(m *testing.M) {
 

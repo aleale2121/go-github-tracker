@@ -14,15 +14,15 @@ import (
 type Consumer struct {
 	conn                  *amqp.Connection
 	queueName             string
-	MetaDataPersistence   db.MetadataPersistence
-	CommitPersistence     db.CommitPersistence
-	RepositoryPersistence db.RepositoryPersistence
+	MetaDataPersistence   db.MetadataRepository
+	CommitPersistence     db.CommitRepository
+	RepositoryPersistence db.GitReposRepository
 }
 
 func NewConsumer(conn *amqp.Connection, queueName string,
-	metaDataPersistence db.MetadataPersistence,
-	commitPersistence db.CommitPersistence,
-	repositoryPersistence db.RepositoryPersistence) (Consumer, error) {
+	metaDataPersistence db.MetadataRepository,
+	commitPersistence db.CommitRepository,
+	repositoryPersistence db.GitReposRepository) (Consumer, error) {
 	consumer := Consumer{
 		conn:                  conn,
 		queueName:             queueName,
