@@ -4,10 +4,10 @@ import "commits-manager-service/internal/storage/db"
 import "commits-manager-service/internal/constants/models"
 
 type CommitsManagerService struct {
-	CommitsPersistence db.CommitPersistence
+	CommitsPersistence db.CommitRepository
 }
 
-func NewCommitsManagerService(commitsPersistence db.CommitPersistence) CommitsManagerService {
+func NewCommitsManagerService(commitsPersistence db.CommitRepository) CommitsManagerService {
 	return CommitsManagerService{CommitsPersistence: commitsPersistence}
 }
 

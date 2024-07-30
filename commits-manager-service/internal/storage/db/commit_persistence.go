@@ -7,16 +7,28 @@ import (
 	"log"
 )
 
+type CommitRepository interface {
+	GetAllCommits() ([]*models.Commit, error)
+	GetCommitBySHA(sha string) (*models.Commit, error)
+	UpdateCommit(commit models.Commit) error
+	DeleteCommit(sha string) error
+	InsertCommit(commit models.Commit) error
+	SaveAllCommits(commits []models.Commit) error
+	CommitExists(sha string) (bool, error)
+	GetCommitsByRepoName(repoName string) ([]*models.Commit, error)
+	GetTopCommitAuthors(limit int) ([]*models.CommitAuthor, error)
+	GetTopCommitAuthorsByRepo(repoName string, limit int) ([]*models.CommitAuthor, error)
+}
+
 type CommitPersistence struct {
 	db *sql.DB
 }
 
 // NewCommitPersistence creates an instance of the CommitPersistence.
-func NewCommitPersistence(dbPool *sql.DB) CommitPersistence {
-	return CommitPersistence{db: dbPool}
+func NewCommitPersistence(dbPool *sql.DB) CommitRepository {
+	return &CommitPersistence{db: dbPool}
 }
 
-// GetAllCommits returns all commits from the database.
 func (cp *CommitPersistence) GetAllCommits() ([]*models.Commit, error) {
 	rows, err := cp.db.Query("SELECT sha, url, message, author_name, author_date, created_at, updated_at, repository_name FROM commits")
 	if err != nil {
@@ -43,7 +55,6 @@ func (cp *CommitPersistence) GetAllCommits() ([]*models.Commit, error) {
 	return commits, nil
 }
 
-// GetCommitBySHA returns a commit from the database by SHA.
 func (cp *CommitPersistence) GetCommitBySHA(sha string) (*models.Commit, error) {
 	var commit models.Commit
 	err := cp.db.QueryRow("SELECT sha, url, message, author_name, author_date, created_at, updated_at, repository_name FROM commits WHERE sha = $1", sha).
@@ -55,7 +66,6 @@ func (cp *CommitPersistence) GetCommitBySHA(sha string) (*models.Commit, error) 
 	return &commit, nil
 }
 
-// UpdateCommit updates a commit in the database.
 func (cp *CommitPersistence) UpdateCommit(commit models.Commit) error {
 	_, err := cp.db.Exec("UPDATE commits SET url = $1, message = $2, author_name = $3, author_date = $4, created_at = $5, updated_at = $6, repository_name = $7 WHERE sha = $8",
 		commit.URL, commit.Message, commit.AuthorName, commit.AuthorDate, commit.CreatedAt, commit.UpdatedAt, commit.RepositoryName, commit.SHA)
@@ -66,7 +76,6 @@ func (cp *CommitPersistence) UpdateCommit(commit models.Commit) error {
 	return nil
 }
 
-// DeleteCommit deletes a commit from the database.
 func (cp *CommitPersistence) DeleteCommit(sha string) error {
 	_, err := cp.db.Exec("DELETE FROM commits WHERE sha = $1", sha)
 	if err != nil {
@@ -76,7 +85,6 @@ func (cp *CommitPersistence) DeleteCommit(sha string) error {
 	return nil
 }
 
-// InsertCommit inserts a new commit into the database.
 func (cp *CommitPersistence) InsertCommit(commit models.Commit) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
@@ -92,7 +100,6 @@ func (cp *CommitPersistence) InsertCommit(commit models.Commit) error {
 	return nil
 }
 
-// SaveAllCommits inserts or updates multiple commits in the database.
 func (cp *CommitPersistence) SaveAllCommits(commits []models.Commit) error {
 	for _, commit := range commits {
 		exists, err := cp.CommitExists(commit.SHA)
@@ -112,7 +119,6 @@ func (cp *CommitPersistence) SaveAllCommits(commits []models.Commit) error {
 	return nil
 }
 
-// CommitExists checks if a commit exists in the database.
 func (cp *CommitPersistence) CommitExists(sha string) (bool, error) {
 	var exists bool
 	query := "SELECT EXISTS (SELECT 1 FROM commits WHERE sha = $1)"
@@ -120,7 +126,6 @@ func (cp *CommitPersistence) CommitExists(sha string) (bool, error) {
 	return exists, err
 }
 
-// GetCommitsByRepoName returns all commits for a specific repository.
 func (cp *CommitPersistence) GetCommitsByRepoName(repoName string) ([]*models.Commit, error) {
 	rows, err := cp.db.Query("SELECT sha, url, message, author_name, author_date, created_at, updated_at, repository_name FROM commits WHERE repository_name = $1", repoName)
 	if err != nil {
@@ -147,7 +152,6 @@ func (cp *CommitPersistence) GetCommitsByRepoName(repoName string) ([]*models.Co
 	return commits, nil
 }
 
-// GetTopCommitAuthors returns the top N commit authors overall.
 func (cp *CommitPersistence) GetTopCommitAuthors(limit int) ([]*models.CommitAuthor, error) {
 	query := `
         SELECT author_name, COUNT(*) as commit_count
@@ -174,7 +178,6 @@ func (cp *CommitPersistence) GetTopCommitAuthors(limit int) ([]*models.CommitAut
 	return authors, nil
 }
 
-// GetTopCommitAuthorsByRepo returns the top N commit authors for a specific repository.
 func (cp *CommitPersistence) GetTopCommitAuthorsByRepo(repoName string, limit int) ([]*models.CommitAuthor, error) {
 	query := `
         SELECT author_name, COUNT(*) as commit_count

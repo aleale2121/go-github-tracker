@@ -9,7 +9,7 @@ import (
 
 type CommitsMetaDataServer struct {
 	commits.UnimplementedCommitsMetaDataServiceServer
-	MetaDataPersistemce db.MetadataPersistence
+	MetaDataPersistemce db.MetadataRepository
 }
 
 func (cmds *CommitsMetaDataServer) GetRepoCommitMetaData(ctx context.Context, req *commits.RepoCommitMetaDataRequest) (*commits.RepoCommitMetaDataResponse, error) {
