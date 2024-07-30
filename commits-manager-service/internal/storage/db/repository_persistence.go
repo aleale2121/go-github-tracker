@@ -7,13 +7,22 @@ import (
 	"log"
 )
 
+type GitReposRepository interface {
+	GetAllRepositories() ([]*models.Repository, error)
+	GetRepositoryByID(name string) (*models.Repository, error)
+	UpdateRepository(repo models.Repository) error
+	DeleteRepository(name string) error
+	InsertRepository(repo models.Repository) (string, error)
+	SaveAllRepositories(repos []models.Repository) error
+	RepositoryExists(name string) (bool, error)
+}
 type RepositoryPersistence struct {
 	db *sql.DB
 }
 
 // NewRepositoryPersistence creates an instance of the RepositoryPersistence.
-func NewRepositoryPersistence(dbPool *sql.DB) RepositoryPersistence {
-	return RepositoryPersistence{db: dbPool}
+func NewRepositoryPersistence(dbPool *sql.DB) GitReposRepository {
+	return &RepositoryPersistence{db: dbPool}
 }
 
 // GetAllRepositories returns all repositories from the database.

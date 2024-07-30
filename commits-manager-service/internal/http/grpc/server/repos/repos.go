@@ -10,8 +10,8 @@ import (
 
 type ReposMetaDataServer struct {
 	repos.UnimplementedRepositoryMetaDataServiceServer
-	MetaDataPersistemce   db.MetadataPersistence
-	RepositoryPersistence db.RepositoryPersistence
+	MetaDataPersistemce   db.MetadataRepository
+	RepositoryPersistence db.GitReposRepository
 }
 
 func (rmds *ReposMetaDataServer) GetRepositories(ctx context.Context, req *repos.GetRepositoriesRequest) (*repos.GetRepositoriesResponse, error) {
