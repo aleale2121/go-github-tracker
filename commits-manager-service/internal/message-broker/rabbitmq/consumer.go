@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -211,8 +212,8 @@ func ConvertCommitResponseToCommit(response models.CommitResponse, repositoryNam
 		Message:        response.Commit.Message,
 		AuthorName:     response.Commit.Author.Name,
 		AuthorDate:     response.Commit.Author.Date,
-		CreatedAt:      response.Commit.Author.Date,
-		UpdatedAt:      response.Commit.Committer.Date,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 		RepositoryName: repositoryName,
 	}
 }
