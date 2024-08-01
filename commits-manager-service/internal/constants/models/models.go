@@ -34,13 +34,13 @@ type CommitAuthor struct {
 }
 
 
-type FetchReposMetadata struct {
+type ReposFetchData struct {
 	ID        int64
 	Total     int
 	FetchedAt time.Time
 }
 
-type FetchCommitsMetadata struct {
+type CommitsFetchData struct {
 	ID             int64
 	RepositoryName string
 	Total          int
