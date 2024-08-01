@@ -1,20 +1,25 @@
 package db
 
 import (
+	"commits-manager-service/internal/constants/models"
 	"context"
 	"database/sql"
-	"commits-manager-service/internal/constants/models"
 	"log"
+	"time"
 )
 
 type GitReposRepository interface {
 	GetAllRepositories() ([]*models.Repository, error)
+	GetAllRepositoryNames() ([]string, error)
 	GetRepositoryByID(name string) (*models.Repository, error)
 	UpdateRepository(repo models.Repository) error
 	DeleteRepository(name string) error
 	InsertRepository(repo models.Repository) (string, error)
 	SaveAllRepositories(repos []models.Repository) error
 	RepositoryExists(name string) (bool, error)
+
+	SaveReposFetchData(metadata models.ReposFetchData) error
+	GetLastReposFetchTime() (time.Time, error)
 }
 type RepositoryPersistence struct {
 	db *sql.DB
@@ -50,6 +55,33 @@ func (rp *RepositoryPersistence) GetAllRepositories() ([]*models.Repository, err
 	}
 
 	return repositories, nil
+}
+
+// GetAllRepositoryNames returns the names of all repositories in the database.
+func (rp *RepositoryPersistence) GetAllRepositoryNames() ([]string, error) {
+	rows, err := rp.db.Query("SELECT name FROM repositories")
+	if err != nil {
+		log.Println("Error querying repository names:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			log.Println("Error scanning repository name row:", err)
+			return nil, err
+		}
+		names = append(names, name)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println("Error iterating through repository names:", err)
+		return nil, err
+	}
+
+	return names, nil
 }
 
 // GetRepositoryByID returns a repository from the database by ID.
@@ -128,4 +160,29 @@ func (rp *RepositoryPersistence) RepositoryExists(name string) (bool, error) {
 	query := "SELECT EXISTS (SELECT 1 FROM repositories WHERE name = $1)"
 	err := rp.db.QueryRow(query, name).Scan(&exists)
 	return exists, err
+}
+
+// SaveReposFetchData saves metadata for fetching repositories.
+func (rp *RepositoryPersistence) SaveReposFetchData(metadata models.ReposFetchData) error {
+	stmt := `INSERT INTO fetch_repos_metadata (total, fetched_at) VALUES ($1, $2)`
+	_, err := rp.db.Exec(stmt, metadata.Total, metadata.FetchedAt)
+	if err != nil {
+		log.Println("Error inserting fetch repos metadata:", err)
+		return err
+	}
+	return nil
+}
+
+// GetLastReposFetchTime returns the last repository fetch time.
+func (rp *RepositoryPersistence)  GetLastReposFetchTime() (time.Time, error) {
+	var fetchedAt time.Time
+	err := rp.db.QueryRow("SELECT fetched_at FROM fetch_repos_metadata ORDER BY fetched_at DESC LIMIT 1").Scan(&fetchedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return time.Time{}, nil 
+		}
+		log.Println("Error querying last repository fetch time:", err)
+		return time.Time{}, err
+	}
+	return fetchedAt, nil
 }

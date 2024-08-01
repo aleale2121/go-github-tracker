@@ -1,10 +1,12 @@
 package db
 
 import (
+	"commits-manager-service/internal/constants/models"
 	"context"
 	"database/sql"
-	"commits-manager-service/internal/constants/models"
 	"log"
+
+	"time"
 )
 
 type CommitRepository interface {
@@ -18,6 +20,9 @@ type CommitRepository interface {
 	GetCommitsByRepoName(repoName string) ([]*models.Commit, error)
 	GetTopCommitAuthors(limit int) ([]*models.CommitAuthor, error)
 	GetTopCommitAuthorsByRepo(repoName string, limit int) ([]*models.CommitAuthor, error)
+
+	SaveCommitsFetchData(metadata models.CommitsFetchData) error
+	GetLastCommitFetchTime(repositoryName string) (time.Time, error)
 }
 
 type CommitPersistence struct {
@@ -203,4 +208,29 @@ func (cp *CommitPersistence) GetTopCommitAuthorsByRepo(repoName string, limit in
 	}
 
 	return authors, nil
+}
+
+// SaveCommitsFetchData saves metadata for fetching commits.
+func (cp *CommitPersistence) SaveCommitsFetchData(metadata models.CommitsFetchData) error {
+	stmt := `INSERT INTO fetch_commits_metadata (repository_name, total, fetched_at) VALUES ($1, $2, $3)`
+	_, err := cp.db.Exec(stmt, metadata.RepositoryName, metadata.Total, metadata.FetchedAt)
+	if err != nil {
+		log.Println("Error inserting fetch commits metadata:", err)
+		return err
+	}
+	return nil
+}
+
+// GetLastCommitFetchTime returns the last commit fetch time for a given repository.
+func (cp *CommitPersistence) GetLastCommitFetchTime(repositoryName string) (time.Time, error) {
+	var fetchedAt time.Time
+	err := cp.db.QueryRow("SELECT fetched_at FROM fetch_commits_metadata WHERE repository_name = $1 ORDER BY fetched_at DESC LIMIT 1", repositoryName).Scan(&fetchedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return time.Time{}, nil
+		}
+		log.Println("Error querying last commit fetch time:", err)
+		return time.Time{}, err
+	}
+	return fetchedAt, nil
 }
