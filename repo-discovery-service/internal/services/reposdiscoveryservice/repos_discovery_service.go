@@ -32,13 +32,13 @@ func NewReposDiscoveryService(
 	}
 }
 
-func (sc *ReposDiscoveryService) ScheduleFetchingNewRepository(interval time.Duration) {
-	log.Println("Fetching Repositories Started ")
-	sc.fetchAndSaveRepositories()
+func (sc *ReposDiscoveryService) ScheduleDiscoveringNewRepository(interval time.Duration) {
+	log.Println("Discovering New Repositories Started ")
+	sc.discoverAndSaveNewRepositories()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for range ticker.C {
-		go sc.fetchAndSaveRepositories()
+		go sc.discoverAndSaveNewRepositories()
 	}
 }
 
@@ -52,7 +52,7 @@ func (sc *ReposDiscoveryService) ScheduleFetchingRepositoryMetadata(interval tim
 	}
 }
 
-func (sc *ReposDiscoveryService) fetchAndSaveRepositories() {
+func (sc *ReposDiscoveryService) discoverAndSaveNewRepositories() {
 	fetchTime := time.Now()
 	since, err := sc.ReposMetaDataServiceClient.GetReposLastFetchTime()
 	log.Println("last fetch time: ", since)
@@ -79,7 +79,7 @@ func (sc *ReposDiscoveryService) fetchAndSaveRepositories() {
 func (sc *ReposDiscoveryService) fetchRepositoriesMetadata() {
 	repositories, err := sc.ReposMetaDataServiceClient.GetRepositoryNames()
 	if err != nil {
-		log.Println("Error getting all repository names")
+		log.Println("Error getting repository names")
 		log.Println("ERR:", err)
 	}
 
