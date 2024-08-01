@@ -62,14 +62,12 @@ func main() {
 	commitsHandler := handlers.NewCommitsHandler(commitsManagerService)
 	commitsRouting := routing.CommitsRouting(commitsHandler)
 
-	metaDataPersistence := db.NewMetadataPersistence(dbConn)
-
 	var routesList []routers.Route
 	routesList = append(routesList, repositoriesRouting...)
 	routesList = append(routesList, commitsRouting...)
 
 	consumer, err := event.NewConsumer(rabbitConn, "githubApiQueue",
-		metaDataPersistence, commitPersistence, repositoryPersistence)
+		commitPersistence, repositoryPersistence)
 	if err != nil {
 		log.Println("Listening for and consuming RabbitMQ messages...")
 		panic(err)
@@ -77,7 +75,7 @@ func main() {
 
 	// watch the queue and consume events
 	go func(eventConsumer event.Consumer) {
-		err = eventConsumer.Listen([]string{"github.REPOS", "github.COMMITS"})
+		err = eventConsumer.Listen([]string{"github.REPOS", "github.REPO","github.COMMITS"})
 		if err != nil {
 			log.Println(err)
 		}
@@ -90,7 +88,6 @@ func main() {
 	log.Println("server started at port :80")
 
 	go func() {
-		metaDataPersistence := db.NewMetadataPersistence(dbConn)
 
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%s", gRpcPort))
 		if err != nil {
@@ -98,14 +95,13 @@ func main() {
 		}
 		s := grpc.NewServer()
 
-		commits.RegisterCommitsMetaDataServiceServer(s,
+		commits.RegisterCommitsServiceServer(s,
 			&commitMetaData.CommitsMetaDataServer{
-				MetaDataPersistemce: metaDataPersistence,
+				CommitPersistence: commitPersistence,
 			})
 
-		repos.RegisterRepositoryMetaDataServiceServer(s,
+		repos.RegisterRepositoriesServiceServer(s,
 			&reposMetaData.ReposMetaDataServer{
-				MetaDataPersistemce:   metaDataPersistence,
 				RepositoryPersistence: repositoryPersistence,
 			})
 

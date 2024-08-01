@@ -9,8 +9,7 @@ import (
 )
 
 type ReposMetaDataServer struct {
-	repos.UnimplementedRepositoryMetaDataServiceServer
-	MetaDataPersistemce   db.MetadataRepository
+	repos.UnimplementedRepositoriesServiceServer
 	RepositoryPersistence db.GitReposRepository
 }
 
@@ -24,12 +23,22 @@ func (rmds *ReposMetaDataServer) GetRepositories(ctx context.Context, req *repos
 	}, nil
 }
 
-func (rmds *ReposMetaDataServer) AllRepositoriesMetaData(ctx context.Context, req *repos.AllReposMetaDataRequest) (*repos.AllReposMetaDataResponse, error) {
-	lastFetchTime, err := rmds.MetaDataPersistemce.GetLastReposFetchTime()
+func (rmds *ReposMetaDataServer) GetRepositoryNames(ctx context.Context, req *repos.GetRepositoryNamesRequest) (*repos.GetRepositoryNamesResponse, error) {
+	repositories, err := rmds.RepositoryPersistence.GetAllRepositoryNames()
 	if err != nil {
 		return nil, err
 	}
-	return &repos.AllReposMetaDataResponse{
+	return &repos.GetRepositoryNamesResponse{
+		Repositories: repositories,
+	}, nil
+}
+
+func (rmds *ReposMetaDataServer) GetReposFetchData(ctx context.Context, req *repos.GetReposFetchDataRequest) (*repos.GetReposFetchDataResponse, error) {
+	lastFetchTime, err := rmds.RepositoryPersistence.GetLastReposFetchTime()
+	if err != nil {
+		return nil, err
+	}
+	return &repos.GetReposFetchDataResponse{
 		LastFetchTime: lastFetchTime.UTC().Format(constants.ISO_8601_TIME_LAYOUT),
 	}, nil
 }
