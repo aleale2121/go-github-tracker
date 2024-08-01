@@ -12,7 +12,7 @@ type CommitsMetaDataServer struct {
 	CommitPersistence     db.CommitRepository
 }
 
-func (cmds *CommitsMetaDataServer) GetRepoCommitMetaData(ctx context.Context, req *commits.RepoCommiFetchDataRequest) (*commits.RepoCommitFetchDataResponse, error) {
+func (cmds *CommitsMetaDataServer) GetRepoCommitFetchData(ctx context.Context, req *commits.RepoCommiFetchDataRequest) (*commits.RepoCommitFetchDataResponse, error) {
 	lastFetchTime, err := cmds.CommitPersistence.GetLastCommitFetchTime(req.RepositoryName)
 	if err != nil {
 		return nil, err
