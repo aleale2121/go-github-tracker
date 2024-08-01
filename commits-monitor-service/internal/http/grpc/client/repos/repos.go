@@ -27,7 +27,7 @@ func (rmdsc ReposMetaDataServiceClient) GetRepositories() ([]*rmds.Repository, e
 	}
 	defer conn.Close()
 
-	c := rmds.NewRepositoryMetaDataServiceClient(conn)
+	c := rmds.NewRepositoriesServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
@@ -38,20 +38,20 @@ func (rmdsc ReposMetaDataServiceClient) GetRepositories() ([]*rmds.Repository, e
 	return response.Repositories, nil
 }
 
-func (rmdsc ReposMetaDataServiceClient) GetReposLastFetchTime() (string, error) {
+func (rmdsc ReposMetaDataServiceClient) GetRepositoryNames() ([]string, error) {
 	conn, err := grpc.NewClient(rmdsc.ServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer conn.Close()
 
-	c := rmds.NewRepositoryMetaDataServiceClient(conn)
+	c := rmds.NewRepositoriesServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	response, err := c.AllRepositoriesMetaData(ctx, &rmds.AllReposMetaDataRequest{})
+	response, err := c.GetRepositoryNames(ctx, &rmds.GetRepositoryNamesRequest{})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return response.LastFetchTime, nil
+	return response.Repositories, nil
 }

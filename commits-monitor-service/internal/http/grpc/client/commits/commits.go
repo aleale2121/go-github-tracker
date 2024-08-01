@@ -27,11 +27,11 @@ func (rmdsc CommitsMetaDataServiceClient) GetRepoLastFetchTime(repoName string) 
 	}
 	defer conn.Close()
 
-	c := cmds.NewCommitsMetaDataServiceClient(conn)
+	c := cmds.NewCommitsServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	response, err := c.GetRepoCommitMetaData(ctx, &cmds.RepoCommitMetaDataRequest{
+	response, err := c.GetRepoCommitFetchData(ctx, &cmds.RepoCommiFetchDataRequest{
 		RepositoryName: repoName,
 	})
 	if err != nil {

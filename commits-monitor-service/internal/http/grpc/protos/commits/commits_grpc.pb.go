@@ -18,87 +18,86 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// CommitsMetaDataServiceClient is the client API for CommitsMetaDataService service.
+// CommitsServiceClient is the client API for CommitsService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type CommitsMetaDataServiceClient interface {
-	GetRepoCommitMetaData(ctx context.Context, in *RepoCommitMetaDataRequest, opts ...grpc.CallOption) (*RepoCommitMetaDataResponse, error)
+type CommitsServiceClient interface {
+	GetRepoCommitFetchData(ctx context.Context, in *RepoCommiFetchDataRequest, opts ...grpc.CallOption) (*RepoCommitFetchDataResponse, error)
 }
 
-type commitsMetaDataServiceClient struct {
+type commitsServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewCommitsMetaDataServiceClient(cc grpc.ClientConnInterface) CommitsMetaDataServiceClient {
-	return &commitsMetaDataServiceClient{cc}
+func NewCommitsServiceClient(cc grpc.ClientConnInterface) CommitsServiceClient {
+	return &commitsServiceClient{cc}
 }
 
-func (c *commitsMetaDataServiceClient) GetRepoCommitMetaData(ctx context.Context, in *RepoCommitMetaDataRequest, opts ...grpc.CallOption) (*RepoCommitMetaDataResponse, error) {
-	out := new(RepoCommitMetaDataResponse)
-	err := c.cc.Invoke(ctx, "/commits.CommitsMetaDataService/GetRepoCommitMetaData", in, out, opts...)
+func (c *commitsServiceClient) GetRepoCommitFetchData(ctx context.Context, in *RepoCommiFetchDataRequest, opts ...grpc.CallOption) (*RepoCommitFetchDataResponse, error) {
+	out := new(RepoCommitFetchDataResponse)
+	err := c.cc.Invoke(ctx, "/commits.CommitsService/GetRepoCommitFetchData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// CommitsMetaDataServiceServer is the server API for CommitsMetaDataService service.
-// All implementations must embed UnimplementedCommitsMetaDataServiceServer
+// CommitsServiceServer is the server API for CommitsService service.
+// All implementations must embed UnimplementedCommitsServiceServer
 // for forward compatibility
-type CommitsMetaDataServiceServer interface {
-	GetRepoCommitMetaData(context.Context, *RepoCommitMetaDataRequest) (*RepoCommitMetaDataResponse, error)
-	mustEmbedUnimplementedCommitsMetaDataServiceServer()
+type CommitsServiceServer interface {
+	GetRepoCommitFetchData(context.Context, *RepoCommiFetchDataRequest) (*RepoCommitFetchDataResponse, error)
+	mustEmbedUnimplementedCommitsServiceServer()
 }
 
-// UnimplementedCommitsMetaDataServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedCommitsMetaDataServiceServer struct {
+// UnimplementedCommitsServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedCommitsServiceServer struct {
 }
 
-func (UnimplementedCommitsMetaDataServiceServer) GetRepoCommitMetaData(context.Context, *RepoCommitMetaDataRequest) (*RepoCommitMetaDataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRepoCommitMetaData not implemented")
+func (UnimplementedCommitsServiceServer) GetRepoCommitFetchData(context.Context, *RepoCommiFetchDataRequest) (*RepoCommitFetchDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRepoCommitFetchData not implemented")
 }
-func (UnimplementedCommitsMetaDataServiceServer) mustEmbedUnimplementedCommitsMetaDataServiceServer() {
-}
+func (UnimplementedCommitsServiceServer) mustEmbedUnimplementedCommitsServiceServer() {}
 
-// UnsafeCommitsMetaDataServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to CommitsMetaDataServiceServer will
+// UnsafeCommitsServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to CommitsServiceServer will
 // result in compilation errors.
-type UnsafeCommitsMetaDataServiceServer interface {
-	mustEmbedUnimplementedCommitsMetaDataServiceServer()
+type UnsafeCommitsServiceServer interface {
+	mustEmbedUnimplementedCommitsServiceServer()
 }
 
-func RegisterCommitsMetaDataServiceServer(s grpc.ServiceRegistrar, srv CommitsMetaDataServiceServer) {
-	s.RegisterService(&CommitsMetaDataService_ServiceDesc, srv)
+func RegisterCommitsServiceServer(s grpc.ServiceRegistrar, srv CommitsServiceServer) {
+	s.RegisterService(&CommitsService_ServiceDesc, srv)
 }
 
-func _CommitsMetaDataService_GetRepoCommitMetaData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RepoCommitMetaDataRequest)
+func _CommitsService_GetRepoCommitFetchData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RepoCommiFetchDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CommitsMetaDataServiceServer).GetRepoCommitMetaData(ctx, in)
+		return srv.(CommitsServiceServer).GetRepoCommitFetchData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/commits.CommitsMetaDataService/GetRepoCommitMetaData",
+		FullMethod: "/commits.CommitsService/GetRepoCommitFetchData",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommitsMetaDataServiceServer).GetRepoCommitMetaData(ctx, req.(*RepoCommitMetaDataRequest))
+		return srv.(CommitsServiceServer).GetRepoCommitFetchData(ctx, req.(*RepoCommiFetchDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// CommitsMetaDataService_ServiceDesc is the grpc.ServiceDesc for CommitsMetaDataService service.
+// CommitsService_ServiceDesc is the grpc.ServiceDesc for CommitsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var CommitsMetaDataService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "commits.CommitsMetaDataService",
-	HandlerType: (*CommitsMetaDataServiceServer)(nil),
+var CommitsService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "commits.CommitsService",
+	HandlerType: (*CommitsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetRepoCommitMetaData",
-			Handler:    _CommitsMetaDataService_GetRepoCommitMetaData_Handler,
+			MethodName: "GetRepoCommitFetchData",
+			Handler:    _CommitsService_GetRepoCommitFetchData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

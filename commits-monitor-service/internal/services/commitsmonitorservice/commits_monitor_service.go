@@ -5,7 +5,6 @@ import (
 	"commits-monitor-service/internal/constants/models"
 	cmdsc "commits-monitor-service/internal/http/grpc/client/commits"
 	rmdsc "commits-monitor-service/internal/http/grpc/client/repos"
-	"commits-monitor-service/internal/http/grpc/protos/repos"
 	"commits-monitor-service/internal/message-broker/rabbitmq"
 	"commits-monitor-service/internal/pkg/githubrestclient"
 	"encoding/json"
@@ -49,9 +48,9 @@ func (sc *CommentMonitorService) ScheduleFetchingCommits(interval time.Duration)
 
 func (sc *CommentMonitorService) fetchAndSaveCommits() {
 	fetchTime := time.Now()
-	repositories, err := sc.ReposMetaDataServiceClient.GetRepositories()
+	repositories, err := sc.ReposMetaDataServiceClient.GetRepositoryNames()
 	if err != nil {
-		log.Println("CM Error getting repositories")
+		log.Println("CM Error getting repository Names")
 		log.Println("CM ERR:", err)
 		return
 	}
@@ -59,7 +58,7 @@ func (sc *CommentMonitorService) fetchAndSaveCommits() {
 	var wg sync.WaitGroup
 	for _, repo := range repositories {
 		wg.Add(1)
-		go func(repo *repos.Repository) {
+		go func(repo string) {
 			defer wg.Done()
 			sc.fetchAndSaveCommitsForRepo(repo, fetchTime)
 		}(repo)
@@ -67,8 +66,8 @@ func (sc *CommentMonitorService) fetchAndSaveCommits() {
 	wg.Wait()
 }
 
-func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo *repos.Repository, fetchTime time.Time) {
-	since, err := sc.CommitsMetaDataServiceClient.GetRepoLastFetchTime(repo.Name)
+func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo string, fetchTime time.Time) {
+	since, err := sc.CommitsMetaDataServiceClient.GetRepoLastFetchTime(repo)
 	if err != nil {
 		log.Println("Error getting a repository last commit fetch time")
 		log.Println("ERR:", err)
@@ -78,16 +77,16 @@ func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo *repos.Reposito
 		since = ""
 	}
 
-	log.Printf("repo <%s> last fetched: %s\n", repo.Name, since)
-	commits, err := sc.GithubRestClient.FetchCommits(repo.Name, since)
+	log.Printf("repo <%s> last fetched: %s\n", repo, since)
+	commits, err := sc.GithubRestClient.FetchCommits(repo, since)
 	if err != nil {
-		log.Println("CM Error fetching commits of ", repo.Name)
+		log.Println("CM Error fetching commits of ", repo)
 		log.Println("CM ERR:", err)
 		return
 	}
 
-	log.Printf("repo <%s>  total commits: %d\n", repo.Name, len(commits))
-	sc.pushToQueue(repo.Name, fetchTime, commits)
+	log.Printf("repo <%s>  total commits: %d\n", repo, len(commits))
+	sc.pushToQueue(repo, fetchTime, commits)
 
 }
 
@@ -118,7 +117,7 @@ func (sc *CommentMonitorService) pushToQueue(repoName string, fetchTime time.Tim
 }
 
 type CommitMetaData struct {
-	Repository string  
+	Repository string
 	FetchTime  time.Time
 	Commits    []models.CommitResponse
 }

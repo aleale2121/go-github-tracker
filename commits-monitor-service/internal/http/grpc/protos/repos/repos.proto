@@ -4,13 +4,12 @@ package repos;
 
 option go_package="/repos";
 
-// Define the RepositoryService service
-service RepositoryMetaDataService {
+service RepositoriesService {
     rpc GetRepositories (GetRepositoriesRequest) returns (GetRepositoriesResponse);
-    rpc AllRepositoriesMetaData (AllReposMetaDataRequest) returns (AllReposMetaDataResponse);
+    rpc GetReposFetchData (GetReposFetchDataRequest) returns (GetReposFetchDataResponse);
+    rpc GetRepositoryNames (GetRepositoryNamesRequest) returns (GetRepositoryNamesResponse);
 }
 
-// Define the Repository message
 message Repository {
   string name = 1;
   string description = 2;
@@ -22,17 +21,22 @@ message Repository {
   int32 watchers_count = 8;
 }
 
-// Define the GetRepositories request message
 message GetRepositoriesRequest {
 }
 
-// Define the GetRepositories response message
 message GetRepositoriesResponse {
   repeated Repository repositories = 1;
 }
 
-message AllReposMetaDataRequest{}
+message GetReposFetchDataRequest{}
 
-message AllReposMetaDataResponse{
+message GetReposFetchDataResponse{
   string lastFetchTime = 1;
 }
+
+message GetRepositoryNamesRequest {}
+
+message GetRepositoryNamesResponse {
+  repeated string repositories = 1;
+}
+
