@@ -1,7 +1,10 @@
 package commits
 
-import "commits-manager-service/internal/storage/db"
-import "commits-manager-service/internal/constants/models"
+import (
+	"commits-manager-service/internal/constants/models"
+	"commits-manager-service/internal/storage/db"
+	"time"
+)
 
 type CommitsManagerService struct {
 	CommitsPersistence db.CommitRepository
@@ -11,8 +14,8 @@ func NewCommitsManagerService(commitsPersistence db.CommitRepository) CommitsMan
 	return CommitsManagerService{CommitsPersistence: commitsPersistence}
 }
 
-func (rc CommitsManagerService) GetCommitsByRepositoryName(repoName string) ([]*models.Commit, error) {
-	return rc.CommitsPersistence.GetCommitsByRepoName(repoName)
+func (rc CommitsManagerService) GetCommitsByRepositoryName(repoName string, limit, offset int, startDate, endDate time.Time) ([]*models.Commit, error) {
+	return rc.CommitsPersistence.GetCommitsByRepoName(repoName, limit, offset, startDate, endDate)
 }
 
 func (rc CommitsManagerService) GetTopCommitAuthors(limit int) ([]*models.CommitAuthor, error) {

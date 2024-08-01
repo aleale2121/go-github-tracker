@@ -11,7 +11,7 @@ import (
 type GitReposRepository interface {
 	GetAllRepositories() ([]*models.Repository, error)
 	GetAllRepositoryNames() ([]string, error)
-	GetRepositoryByID(name string) (*models.Repository, error)
+	GetRepositoryByName(name string) (*models.Repository, error)
 	UpdateRepository(repo models.Repository) error
 	DeleteRepository(name string) error
 	InsertRepository(repo models.Repository) (string, error)
@@ -42,7 +42,7 @@ func (rp *RepositoryPersistence) GetAllRepositories() ([]*models.Repository, err
 	var repositories []*models.Repository
 	for rows.Next() {
 		var repo models.Repository
-		if err := rows.Scan(&repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt); err != nil {
+		if err := rows.Scan(&repo.ID, &repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt); err != nil {
 			log.Println("Error scanning repository row:", err)
 			return nil, err
 		}
@@ -84,11 +84,11 @@ func (rp *RepositoryPersistence) GetAllRepositoryNames() ([]string, error) {
 	return names, nil
 }
 
-// GetRepositoryByID returns a repository from the database by ID.
-func (rp *RepositoryPersistence) GetRepositoryByID(name string) (*models.Repository, error) {
+// GetRepositoryByName returns a repository from the database by ID.
+func (rp *RepositoryPersistence) GetRepositoryByName(name string) (*models.Repository, error) {
 	var repo models.Repository
-	err := rp.db.QueryRow("SELECT name, description, url, language, forks_count, stars_count, open_issues_count, watchers_count, created_at, updated_at FROM repositories WHERE name = $1", name).
-		Scan(&repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt)
+	err := rp.db.QueryRow("SELECT id, name, description, url, language, forks_count, stars_count, open_issues_count, watchers_count, created_at, updated_at FROM repositories WHERE name = $1", name).
+		Scan(&repo.ID, &repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt)
 	if err != nil {
 		log.Println("Error querying repository by ID:", err)
 		return nil, err
@@ -174,12 +174,12 @@ func (rp *RepositoryPersistence) SaveReposFetchData(metadata models.ReposFetchDa
 }
 
 // GetLastReposFetchTime returns the last repository fetch time.
-func (rp *RepositoryPersistence)  GetLastReposFetchTime() (time.Time, error) {
+func (rp *RepositoryPersistence) GetLastReposFetchTime() (time.Time, error) {
 	var fetchedAt time.Time
 	err := rp.db.QueryRow("SELECT fetched_at FROM fetch_repos_metadata ORDER BY fetched_at DESC LIMIT 1").Scan(&fetchedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return time.Time{}, nil 
+			return time.Time{}, nil
 		}
 		log.Println("Error querying last repository fetch time:", err)
 		return time.Time{}, err

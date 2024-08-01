@@ -5,6 +5,7 @@ import (
 )
 
 type Repository struct {
+	ID              int64     `json:"id"`
 	Name            string    `json:"name"`
 	Description     string    `json:"description"`
 	URL             string    `json:"url"`
@@ -18,6 +19,7 @@ type Repository struct {
 }
 
 type Commit struct {
+	ID             int64     `json:"-"`
 	SHA            string    `json:"sha"`
 	URL            string    `json:"url"`
 	Message        string    `json:"message"`

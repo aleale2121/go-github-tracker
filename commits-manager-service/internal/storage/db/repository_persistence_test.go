@@ -35,7 +35,7 @@ func TestInsertRepository(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, repo.Name, insertedName)
 
-	retrievedRepo, err := repositoryQueries.GetRepositoryByID(repo.Name)
+	retrievedRepo, err := repositoryQueries.GetRepositoryByName(repo.Name)
 	require.NoError(t, err)
 	require.Equal(t, repo.Name, retrievedRepo.Name)
 	require.Equal(t, repo.Description, retrievedRepo.Description)
@@ -71,7 +71,7 @@ func TestUpdateRepository(t *testing.T) {
 	err = repositoryQueries.UpdateRepository(repo)
 	require.NoError(t, err)
 
-	updatedRepo, err := repositoryQueries.GetRepositoryByID(repo.Name)
+	updatedRepo, err := repositoryQueries.GetRepositoryByName(repo.Name)
 	require.NoError(t, err)
 	require.Equal(t, "Updated description", updatedRepo.Description)
 	repositoryQueries.DeleteRepository(repo.Name)
@@ -86,7 +86,7 @@ func TestDeleteRepository(t *testing.T) {
 	err = repositoryQueries.DeleteRepository(repo.Name)
 	require.NoError(t, err)
 
-	deletedRepo, err := repositoryQueries.GetRepositoryByID(repo.Name)
+	deletedRepo, err := repositoryQueries.GetRepositoryByName(repo.Name)
 	require.Error(t, err)
 	require.Nil(t, deletedRepo)
 }
@@ -109,11 +109,11 @@ func TestSaveAllRepositories(t *testing.T) {
 	err = repositoryQueries.SaveAllRepositories([]models.Repository{repo1, repo2})
 	require.NoError(t, err)
 
-	updatedRepo1, err := repositoryQueries.GetRepositoryByID(repo1.Name)
+	updatedRepo1, err := repositoryQueries.GetRepositoryByName(repo1.Name)
 	require.NoError(t, err)
 	require.Equal(t, "Updated description 1", updatedRepo1.Description)
 
-	updatedRepo2, err := repositoryQueries.GetRepositoryByID(repo2.Name)
+	updatedRepo2, err := repositoryQueries.GetRepositoryByName(repo2.Name)
 	require.NoError(t, err)
 	require.Equal(t, "Updated description 2", updatedRepo2.Description)
 }

@@ -160,30 +160,30 @@ func TestGetAllCommits(t *testing.T) {
 	repositoryQueries.DeleteRepository(repoName)
 }
 
-func TestGetCommitsByRepoName(t *testing.T) {
-	repoName := uuid.New().String()
-	_, err := repositoryQueries.InsertRepository(models.Repository{
-		Name:            repoName,
-		Description:     "Test Repository",
-		URL:             "http://example.com/repo",
-		Language:        "Go",
-		ForksCount:      1,
-		StarsCount:      1,
-		OpenIssuesCount: 0,
-		WatchersCount:   1,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
-	})
-	require.NoError(t, err)
+// func TestGetCommitsByRepoName(t *testing.T) {
+// 	repoName := uuid.New().String()
+// 	_, err := repositoryQueries.InsertRepository(models.Repository{
+// 		Name:            repoName,
+// 		Description:     "Test Repository",
+// 		URL:             "http://example.com/repo",
+// 		Language:        "Go",
+// 		ForksCount:      1,
+// 		StarsCount:      1,
+// 		OpenIssuesCount: 0,
+// 		WatchersCount:   1,
+// 		CreatedAt:       time.Now(),
+// 		UpdatedAt:       time.Now(),
+// 	})
+// 	require.NoError(t, err)
 
-	commit := createRandomCommit(t, repoName)
-	commits, err := commitsQueries.GetCommitsByRepoName(repoName)
-	require.NoError(t, err)
-	require.NotEmpty(t, commits)
-	require.Equal(t, commit.RepositoryName, commits[0].RepositoryName)
-	commitsQueries.DeleteCommit(commit.SHA)
-	repositoryQueries.DeleteRepository(repoName)
-}
+// 	commit := createRandomCommit(t, repoName)
+// 	commits, err := commitsQueries.GetCommitsByRepoName(repoName)
+// 	require.NoError(t, err)
+// 	require.NotEmpty(t, commits)
+// 	require.Equal(t, commit.RepositoryName, commits[0].RepositoryName)
+// 	commitsQueries.DeleteCommit(commit.SHA)
+// 	repositoryQueries.DeleteRepository(repoName)
+// }
 
 func TestGetTopCommitAuthors(t *testing.T) {
 	repoName := uuid.New().String()

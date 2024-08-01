@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"log"
-
 	"time"
 )
 
@@ -17,10 +16,9 @@ type CommitRepository interface {
 	InsertCommit(commit models.Commit) error
 	SaveAllCommits(commits []models.Commit) error
 	CommitExists(sha string) (bool, error)
-	GetCommitsByRepoName(repoName string) ([]*models.Commit, error)
+	GetCommitsByRepoName(repoName string, limit, offset int, startDate, endDate time.Time) ([]*models.Commit, error)
 	GetTopCommitAuthors(limit int) ([]*models.CommitAuthor, error)
 	GetTopCommitAuthorsByRepo(repoName string, limit int) ([]*models.CommitAuthor, error)
-
 	SaveCommitsFetchData(metadata models.CommitsFetchData) error
 	GetLastCommitFetchTime(repositoryName string) (time.Time, error)
 }
@@ -35,7 +33,7 @@ func NewCommitPersistence(dbPool *sql.DB) CommitRepository {
 }
 
 func (cp *CommitPersistence) GetAllCommits() ([]*models.Commit, error) {
-	rows, err := cp.db.Query("SELECT sha, url, message, author_name, author_date, created_at, updated_at, repository_name FROM commits")
+	rows, err := cp.db.Query("SELECT id, sha, url, message, author_name, author_date, created_at, updated_at, repository_name FROM commits")
 	if err != nil {
 		log.Println("Error querying commits:", err)
 		return nil, err
@@ -45,7 +43,7 @@ func (cp *CommitPersistence) GetAllCommits() ([]*models.Commit, error) {
 	var commits []*models.Commit
 	for rows.Next() {
 		var commit models.Commit
-		if err := rows.Scan(&commit.SHA, &commit.URL, &commit.Message, &commit.AuthorName, &commit.AuthorDate, &commit.CreatedAt, &commit.UpdatedAt, &commit.RepositoryName); err != nil {
+		if err := rows.Scan(&commit.ID, &commit.SHA, &commit.URL, &commit.Message, &commit.AuthorName, &commit.AuthorDate, &commit.CreatedAt, &commit.UpdatedAt, &commit.RepositoryName); err != nil {
 			log.Println("Error scanning commit row:", err)
 			return nil, err
 		}
@@ -62,8 +60,8 @@ func (cp *CommitPersistence) GetAllCommits() ([]*models.Commit, error) {
 
 func (cp *CommitPersistence) GetCommitBySHA(sha string) (*models.Commit, error) {
 	var commit models.Commit
-	err := cp.db.QueryRow("SELECT sha, url, message, author_name, author_date, created_at, updated_at, repository_name FROM commits WHERE sha = $1", sha).
-		Scan(&commit.SHA, &commit.URL, &commit.Message, &commit.AuthorName, &commit.AuthorDate, &commit.CreatedAt, &commit.UpdatedAt, &commit.RepositoryName)
+	err := cp.db.QueryRow("SELECT id, sha, url, message, author_name, author_date, created_at, updated_at, repository_name FROM commits WHERE sha = $1", sha).
+		Scan(&commit.ID, &commit.SHA, &commit.URL, &commit.Message, &commit.AuthorName, &commit.AuthorDate, &commit.CreatedAt, &commit.UpdatedAt, &commit.RepositoryName)
 	if err != nil {
 		log.Println("Error querying commit by SHA:", err)
 		return nil, err
@@ -91,6 +89,7 @@ func (cp *CommitPersistence) DeleteCommit(sha string) error {
 }
 
 func (cp *CommitPersistence) InsertCommit(commit models.Commit) error {
+	// Define dbTimeout somewhere in your code, e.g., var dbTimeout = time.Second * 5
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
@@ -131,31 +130,40 @@ func (cp *CommitPersistence) CommitExists(sha string) (bool, error) {
 	return exists, err
 }
 
-func (cp *CommitPersistence) GetCommitsByRepoName(repoName string) ([]*models.Commit, error) {
-	rows, err := cp.db.Query("SELECT sha, url, message, author_name, author_date, created_at, updated_at, repository_name FROM commits WHERE repository_name = $1", repoName)
-	if err != nil {
-		log.Println("Error querying commits by repository name:", err)
-		return nil, err
-	}
-	defer rows.Close()
+func (cp *CommitPersistence) GetCommitsByRepoName(repoName string, limit, offset int, startDate, endDate time.Time) ([]*models.Commit, error) {
+    query := `
+        SELECT id, sha, url, message, author_name, author_date, created_at, updated_at, repository_name
+        FROM commits
+        WHERE repository_name = $1 AND author_date >= $2 AND author_date <= $3
+        ORDER BY author_date ASC
+        LIMIT $4 OFFSET $5
+    `
+    
+    rows, err := cp.db.Query(query, repoName, startDate, endDate, limit, offset)
+    if err != nil {
+        log.Println("Error querying commits by repository name:", err)
+        return nil, err
+    }
+    defer rows.Close()
 
-	var commits []*models.Commit
-	for rows.Next() {
-		var commit models.Commit
-		if err := rows.Scan(&commit.SHA, &commit.URL, &commit.Message, &commit.AuthorName, &commit.AuthorDate, &commit.CreatedAt, &commit.UpdatedAt, &commit.RepositoryName); err != nil {
-			log.Println("Error scanning commit row:", err)
-			return nil, err
-		}
-		commits = append(commits, &commit)
-	}
+    var commits []*models.Commit
+    for rows.Next() {
+        var commit models.Commit
+        if err := rows.Scan(&commit.ID, &commit.SHA, &commit.URL, &commit.Message, &commit.AuthorName, &commit.AuthorDate, &commit.CreatedAt, &commit.UpdatedAt, &commit.RepositoryName); err != nil {
+            log.Println("Error scanning commit row:", err)
+            return nil, err
+        }
+        commits = append(commits, &commit)
+    }
 
-	if err := rows.Err(); err != nil {
-		log.Println("Error iterating through commits:", err)
-		return nil, err
-	}
+    if err := rows.Err(); err != nil {
+        log.Println("Error iterating through commits:", err)
+        return nil, err
+    }
 
-	return commits, nil
+    return commits, nil
 }
+
 
 func (cp *CommitPersistence) GetTopCommitAuthors(limit int) ([]*models.CommitAuthor, error) {
 	query := `
@@ -210,7 +218,6 @@ func (cp *CommitPersistence) GetTopCommitAuthorsByRepo(repoName string, limit in
 	return authors, nil
 }
 
-// SaveCommitsFetchData saves metadata for fetching commits.
 func (cp *CommitPersistence) SaveCommitsFetchData(metadata models.CommitsFetchData) error {
 	stmt := `INSERT INTO fetch_commits_metadata (repository_name, total, fetched_at) VALUES ($1, $2, $3)`
 	_, err := cp.db.Exec(stmt, metadata.RepositoryName, metadata.Total, metadata.FetchedAt)
@@ -221,15 +228,12 @@ func (cp *CommitPersistence) SaveCommitsFetchData(metadata models.CommitsFetchDa
 	return nil
 }
 
-// GetLastCommitFetchTime returns the last commit fetch time for a given repository.
 func (cp *CommitPersistence) GetLastCommitFetchTime(repositoryName string) (time.Time, error) {
 	var fetchedAt time.Time
-	err := cp.db.QueryRow("SELECT fetched_at FROM fetch_commits_metadata WHERE repository_name = $1 ORDER BY fetched_at DESC LIMIT 1", repositoryName).Scan(&fetchedAt)
+	query := `SELECT COALESCE(MAX(fetched_at), '1970-01-01 00:00:00') FROM fetch_commits_metadata WHERE repository_name = $1`
+	err := cp.db.QueryRow(query, repositoryName).Scan(&fetchedAt)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return time.Time{}, nil
-		}
-		log.Println("Error querying last commit fetch time:", err)
+		log.Println("Error getting last commit fetch time:", err)
 		return time.Time{}, err
 	}
 	return fetchedAt, nil

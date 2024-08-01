@@ -3,12 +3,11 @@ package db_test
 import (
 	"commits-manager-service/internal/storage/db"
 	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
 	"testing"
-	_ "github.com/mattn/go-sqlite3"
 )
-
 
 var repositoryQueries db.GitReposRepository
 var commitsQueries db.CommitRepository
@@ -26,8 +25,10 @@ func TestMain(m *testing.M) {
 	}
 
 	createTablesQuery := `
-	CREATE TABLE repositories (
-		name VARCHAR(255) PRIMARY KEY,
+	CREATE TABLE repositories
+	(
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name VARCHAR(255) UNIQUE,
 		description TEXT,
 		url VARCHAR(255) NOT NULL,
 		language VARCHAR(255),
@@ -38,9 +39,11 @@ func TestMain(m *testing.M) {
 		created_at TIMESTAMP NOT NULL,
 		updated_at TIMESTAMP NOT NULL
 	);
-
-	CREATE TABLE commits (
-		sha VARCHAR(255) PRIMARY KEY,
+	
+	CREATE TABLE commits
+	(
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		sha VARCHAR(255) UNIQUE,
 		url VARCHAR(255) NOT NULL,
 		message TEXT NOT NULL,
 		author_name VARCHAR(255) NOT NULL,
@@ -48,7 +51,7 @@ func TestMain(m *testing.M) {
 		created_at TIMESTAMP NOT NULL,
 		updated_at TIMESTAMP NOT NULL,
 		repository_name VARCHAR(255) NOT NULL,
-		FOREIGN KEY (repository_name) REFERENCES repositories(name)
+		FOREIGN KEY (repository_name) REFERENCES repositories(name) ON DELETE CASCADE
 	);`
 	_, err = testDB.Exec(createTablesQuery)
 	if err != nil {
@@ -56,9 +59,7 @@ func TestMain(m *testing.M) {
 	}
 
 	repositoryQueries = db.NewRepositoryPersistence(testDB)
-	commitsQueries =db.NewCommitPersistence(testDB)
+	commitsQueries = db.NewCommitPersistence(testDB)
 
 	os.Exit(m.Run())
 }
-
-
