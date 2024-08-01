@@ -14,19 +14,16 @@ import (
 type Consumer struct {
 	conn                  *amqp.Connection
 	queueName             string
-	MetaDataPersistence   db.MetadataRepository
 	CommitPersistence     db.CommitRepository
 	RepositoryPersistence db.GitReposRepository
 }
 
 func NewConsumer(conn *amqp.Connection, queueName string,
-	metaDataPersistence db.MetadataRepository,
 	commitPersistence db.CommitRepository,
 	repositoryPersistence db.GitReposRepository) (Consumer, error) {
 	consumer := Consumer{
 		conn:                  conn,
 		queueName:             queueName,
-		MetaDataPersistence:   metaDataPersistence,
 		CommitPersistence:     commitPersistence,
 		RepositoryPersistence: repositoryPersistence,
 	}
@@ -87,12 +84,15 @@ func (consumer *Consumer) Listen(topics []string) error {
 	forever := make(chan bool)
 	go func() {
 		for d := range messages {
+			log.Println("Consumer--Type--> ", d.Type)
 			var payload Payload
 			_ = json.Unmarshal(d.Body, &payload)
 
 			switch payload.Name {
 			case "repos":
-				go consumer.proccessAndSaveRepos(payload)
+				go consumer.proccessAndSaveNewRepos(payload)
+			case "repo":
+				go consumer.proccessAndUpdateRepoMetaData(payload)
 			case "commits":
 				go consumer.proccessAndSaveCommits(payload)
 			default:
@@ -128,7 +128,7 @@ func (consumer *Consumer) proccessAndSaveCommits(entry Payload) {
 				return
 			}
 
-			err = consumer.MetaDataPersistence.SaveFetchCommitsMetadata(models.FetchCommitsMetadata{
+			err = consumer.CommitPersistence.SaveCommitsFetchData(models.CommitsFetchData{
 				RepositoryName: commitMetaData.Repository,
 				FetchedAt:      commitMetaData.FetchTime,
 				Total:          len(commits),
@@ -146,7 +146,7 @@ func (consumer *Consumer) proccessAndSaveCommits(entry Payload) {
 
 }
 
-func (consumer *Consumer) proccessAndSaveRepos(entry Payload) {
+func (consumer *Consumer) proccessAndSaveNewRepos(entry Payload) {
 	jsonData, _ := json.MarshalIndent(entry.Data, "", "\t")
 
 	var reposMetaData ReposMetaData
@@ -166,7 +166,7 @@ func (consumer *Consumer) proccessAndSaveRepos(entry Payload) {
 				fmt.Println("Consumer: ERR:", err)
 				return
 			}
-			err = consumer.MetaDataPersistence.SaveFetchReposMetadata(models.FetchReposMetadata{
+			err = consumer.RepositoryPersistence.SaveReposFetchData(models.ReposFetchData{
 				FetchedAt: reposMetaData.FetchTime,
 				Total:     len(repositories),
 			})
@@ -180,6 +180,28 @@ func (consumer *Consumer) proccessAndSaveRepos(entry Payload) {
 		}
 	} else {
 		log.Println("Consumer: Cannot Convert To RepositoryMetaData")
+	}
+}
+
+func (consumer *Consumer) proccessAndUpdateRepoMetaData(entry Payload) {
+	jsonData, _ := json.MarshalIndent(entry.Data, "", "\t")
+
+	var repository models.RepositoryResponse
+	err := json.Unmarshal(jsonData, &repository)
+
+	if err == nil {
+		log.Println("Consumer-Recieved-Repository MetaData->", len(repository.Name))
+
+		err := consumer.RepositoryPersistence.UpdateRepository(
+			ConvertRepositoryResponseToRepository(repository))
+		if err != nil {
+			fmt.Println("Consumer: Error updating repository ")
+			fmt.Println("Consumer: ERR:", err)
+			return
+		}
+
+	} else {
+		log.Println("Consumer: Cannot Convert To Repository")
 	}
 }
 
