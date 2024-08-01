@@ -10,7 +10,7 @@ This project comprises three microservices designed to fetch, store, and monitor
 
 - **Functionality**:
   - Provides REST APIs and database implementations for repository and commit metadata.
-  - Uses RabbitMQ to listen for new repository and new commit fetched events.
+  - Uses RabbitMQ to listen for new repository, new commit fetched events and metadata updates.
   - Runs a gRPC server to handle metadata queries from other microservices.
   
 - **Responsibilities**:
@@ -23,6 +23,7 @@ This project comprises three microservices designed to fetch, store, and monitor
 - **Functionality**:
   - Periodically fetches new repositories from GitHub.
   - Sends repository fetched events to the Commits Manager Service.
+  - Sends repository metadata events to the Commits Manager Service.
   - Retrieves the last repository fetch time via gRPC from the Commits Manager Service.
   
 - **Responsibilities**:
