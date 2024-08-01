@@ -100,9 +100,21 @@ This project comprises three microservices designed to fetch, store, and monitor
     GET <http://localhost:8081/repositories>
     Retrieves a list of all repositories.
 
+    Example
+
+    ```bash
+    curl http://localhost:8081/repositories?page=1&limit =10
+    ```
+
 - **Fetch Repository Commits:**
     GET <http://localhost:8081/commits/{repoName}>
     Retrieves commits for a specific repository.
+
+    Example
+
+    ```bash
+    curl http://localhost:8081/commits/chromium?page=1&limit=10&startDate=2024-08-01T12:41:52Z&endDate=2024-08-01T12:52:26Z
+    ```
 
 - **Fetch Overall Top N Committers:**
     GET <http://localhost:8081/top-commit-authors?limit=10>
@@ -110,6 +122,12 @@ This project comprises three microservices designed to fetch, store, and monitor
 - **Fetch Top N Committers for a Specific Repository:**
     GET <http://localhost:8081/top-commit-authors/{repoName}?limit=10>  
     Retrieves the top N commit authors for a specific repository.
+
+    Example
+
+    ```bash
+    curl http://localhost:8081/top-commit-authors/chromium/?limit =10
+    ```
 
 ### Unit Tests
 
