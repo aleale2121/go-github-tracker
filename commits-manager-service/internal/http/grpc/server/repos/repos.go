@@ -14,7 +14,7 @@ type ReposMetaDataServer struct {
 }
 
 func (rmds *ReposMetaDataServer) GetRepositories(ctx context.Context, req *repos.GetRepositoriesRequest) (*repos.GetRepositoriesResponse, error) {
-	repositories, err := rmds.RepositoryPersistence.GetAllRepositories()
+	repositories, err := rmds.RepositoryPersistence.GetAllRepositories(1000000,0)
 	if err != nil {
 		return nil, err
 	}

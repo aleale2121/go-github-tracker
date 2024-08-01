@@ -52,7 +52,7 @@ func TestGetAllRepositories(t *testing.T) {
 	_, err = repositoryQueries.InsertRepository(repo2)
 	require.NoError(t, err)
 
-	repos, err := repositoryQueries.GetAllRepositories()
+	repos, err := repositoryQueries.GetAllRepositories(1000000,0)
 	require.NoError(t, err)
 	require.Len(t, repos, 2)
 
@@ -98,7 +98,7 @@ func TestSaveAllRepositories(t *testing.T) {
 	err := repositoryQueries.SaveAllRepositories([]models.Repository{repo1, repo2})
 	require.NoError(t, err)
 
-	repos, err := repositoryQueries.GetAllRepositories()
+	repos, err := repositoryQueries.GetAllRepositories(100000000,0)
 	require.NoError(t, err)
 	require.Len(t, repos, 2)
 

@@ -11,6 +11,6 @@ func NewRepositoryManagerService(repositoryPersistence db.GitReposRepository) Re
 	return RepositoryManagerService{RepositoryPersistence: repositoryPersistence}
 }
 
-func (rc RepositoryManagerService) GetRepositories() ([]*models.Repository, error) {
-	return rc.RepositoryPersistence.GetAllRepositories()
+func (rc RepositoryManagerService) GetRepositories(limit, offset int) ([]*models.Repository, error) {
+	return rc.RepositoryPersistence.GetAllRepositories(limit, offset)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type GitReposRepository interface {
-	GetAllRepositories() ([]*models.Repository, error)
+	GetAllRepositories(limit, offset int) ([]*models.Repository, error)
 	GetAllRepositoryNames() ([]string, error)
 	GetRepositoryByName(name string) (*models.Repository, error)
 	UpdateRepository(repo models.Repository) error
@@ -31,31 +31,38 @@ func NewRepositoryPersistence(dbPool *sql.DB) GitReposRepository {
 }
 
 // GetAllRepositories returns all repositories from the database.
-func (rp *RepositoryPersistence) GetAllRepositories() ([]*models.Repository, error) {
-	rows, err := rp.db.Query("SELECT * FROM repositories")
-	if err != nil {
-		log.Println("Error querying repositories:", err)
-		return nil, err
-	}
-	defer rows.Close()
+func (rp *RepositoryPersistence) GetAllRepositories(limit, offset int) ([]*models.Repository, error) {
+    query := `
+        SELECT id, name, description, url, language, forks_count, stars_count, open_issues_count, watchers_count, created_at, updated_at
+        FROM repositories
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2
+    `
+    rows, err := rp.db.Query(query, limit, offset)
+    if err != nil {
+        log.Println("Error querying repositories:", err)
+        return nil, err
+    }
+    defer rows.Close()
 
-	var repositories []*models.Repository
-	for rows.Next() {
-		var repo models.Repository
-		if err := rows.Scan(&repo.ID, &repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt); err != nil {
-			log.Println("Error scanning repository row:", err)
-			return nil, err
-		}
-		repositories = append(repositories, &repo)
-	}
+    var repositories []*models.Repository
+    for rows.Next() {
+        var repo models.Repository
+        if err := rows.Scan(&repo.ID, &repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt); err != nil {
+            log.Println("Error scanning repository row:", err)
+            return nil, err
+        }
+        repositories = append(repositories, &repo)
+    }
 
-	if err := rows.Err(); err != nil {
-		log.Println("Error iterating through repositories:", err)
-		return nil, err
-	}
+    if err := rows.Err(); err != nil {
+        log.Println("Error iterating through repositories:", err)
+        return nil, err
+    }
 
-	return repositories, nil
+    return repositories, nil
 }
+
 
 // GetAllRepositoryNames returns the names of all repositories in the database.
 func (rp *RepositoryPersistence) GetAllRepositoryNames() ([]string, error) {
