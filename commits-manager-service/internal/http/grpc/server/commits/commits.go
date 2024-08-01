@@ -8,16 +8,16 @@ import (
 )
 
 type CommitsMetaDataServer struct {
-	commits.UnimplementedCommitsMetaDataServiceServer
-	MetaDataPersistemce db.MetadataRepository
+	commits.UnimplementedCommitsServiceServer
+	CommitPersistence     db.CommitRepository
 }
 
-func (cmds *CommitsMetaDataServer) GetRepoCommitMetaData(ctx context.Context, req *commits.RepoCommitMetaDataRequest) (*commits.RepoCommitMetaDataResponse, error) {
-	lastFetchTime, err := cmds.MetaDataPersistemce.GetLastCommitFetchTime(req.RepositoryName)
+func (cmds *CommitsMetaDataServer) GetRepoCommitMetaData(ctx context.Context, req *commits.RepoCommiFetchDataRequest) (*commits.RepoCommitFetchDataResponse, error) {
+	lastFetchTime, err := cmds.CommitPersistence.GetLastCommitFetchTime(req.RepositoryName)
 	if err != nil {
 		return nil, err
 	}
-	return &commits.RepoCommitMetaDataResponse{
+	return &commits.RepoCommitFetchDataResponse{
 		LastFetchTime: lastFetchTime.UTC().Format(constants.ISO_8601_TIME_LAYOUT),
 	}, nil
 }

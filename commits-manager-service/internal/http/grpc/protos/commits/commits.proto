@@ -4,15 +4,15 @@ package commits;
 
 option go_package="/commits";
 
-service CommitsMetaDataService{
-    rpc GetRepoCommitMetaData (RepoCommitMetaDataRequest) returns (RepoCommitMetaDataResponse);
+service CommitsService{
+    rpc GetRepoCommitFetchData (RepoCommiFetchDataRequest) returns (RepoCommitFetchDataResponse);
 }
 
 
-message RepoCommitMetaDataRequest{
+message RepoCommiFetchDataRequest{
     string repositoryName = 1;
 }
 
-message RepoCommitMetaDataResponse{
+message RepoCommitFetchDataResponse{
     string lastFetchTime = 1;
 }
