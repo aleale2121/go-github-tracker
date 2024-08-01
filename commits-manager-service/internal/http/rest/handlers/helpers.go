@@ -6,9 +6,10 @@ import (
 )
 
 type jsonResponse struct {
-	Error   bool   `json:"error"`
-	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
+    Error      bool        `json:"error"`
+    Message    string      `json:"message"`
+    Pagination interface{} `json:"pagination,omitempty"`
+    Data       interface{} `json:"data"`
 }
 
 

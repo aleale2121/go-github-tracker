@@ -17,6 +17,7 @@ type GitReposRepository interface {
 	InsertRepository(repo models.Repository) (string, error)
 	SaveAllRepositories(repos []models.Repository) error
 	RepositoryExists(name string) (bool, error)
+	GetTotalRepositories() (int, error)
 
 	SaveReposFetchData(metadata models.ReposFetchData) error
 	GetLastReposFetchTime() (time.Time, error)
@@ -32,37 +33,36 @@ func NewRepositoryPersistence(dbPool *sql.DB) GitReposRepository {
 
 // GetAllRepositories returns all repositories from the database.
 func (rp *RepositoryPersistence) GetAllRepositories(limit, offset int) ([]*models.Repository, error) {
-    query := `
+	query := `
         SELECT id, name, description, url, language, forks_count, stars_count, open_issues_count, watchers_count, created_at, updated_at
         FROM repositories
         ORDER BY created_at DESC
         LIMIT $1 OFFSET $2
     `
-    rows, err := rp.db.Query(query, limit, offset)
-    if err != nil {
-        log.Println("Error querying repositories:", err)
-        return nil, err
-    }
-    defer rows.Close()
+	rows, err := rp.db.Query(query, limit, offset)
+	if err != nil {
+		log.Println("Error querying repositories:", err)
+		return nil, err
+	}
+	defer rows.Close()
 
-    var repositories []*models.Repository
-    for rows.Next() {
-        var repo models.Repository
-        if err := rows.Scan(&repo.ID, &repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt); err != nil {
-            log.Println("Error scanning repository row:", err)
-            return nil, err
-        }
-        repositories = append(repositories, &repo)
-    }
+	repositories := make([]*models.Repository, 0)
+	for rows.Next() {
+		var repo models.Repository
+		if err := rows.Scan(&repo.ID, &repo.Name, &repo.Description, &repo.URL, &repo.Language, &repo.ForksCount, &repo.StarsCount, &repo.OpenIssuesCount, &repo.WatchersCount, &repo.CreatedAt, &repo.UpdatedAt); err != nil {
+			log.Println("Error scanning repository row:", err)
+			return nil, err
+		}
+		repositories = append(repositories, &repo)
+	}
 
-    if err := rows.Err(); err != nil {
-        log.Println("Error iterating through repositories:", err)
-        return nil, err
-    }
+	if err := rows.Err(); err != nil {
+		log.Println("Error iterating through repositories:", err)
+		return nil, err
+	}
 
-    return repositories, nil
+	return repositories, nil
 }
-
 
 // GetAllRepositoryNames returns the names of all repositories in the database.
 func (rp *RepositoryPersistence) GetAllRepositoryNames() ([]string, error) {
@@ -73,7 +73,7 @@ func (rp *RepositoryPersistence) GetAllRepositoryNames() ([]string, error) {
 	}
 	defer rows.Close()
 
-	var names []string
+	names := make([]string, 0)
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err != nil {
@@ -192,4 +192,15 @@ func (rp *RepositoryPersistence) GetLastReposFetchTime() (time.Time, error) {
 		return time.Time{}, err
 	}
 	return fetchedAt, nil
+}
+
+func (rp *RepositoryPersistence) GetTotalRepositories() (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM repositories"
+	err := rp.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		log.Println("Error querying total repositories:", err)
+		return 0, err
+	}
+	return count, nil
 }

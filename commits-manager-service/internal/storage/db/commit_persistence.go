@@ -17,6 +17,7 @@ type CommitRepository interface {
 	SaveAllCommits(commits []models.Commit) error
 	CommitExists(sha string) (bool, error)
 	GetCommitsByRepoName(repoName string, limit, offset int, startDate, endDate time.Time) ([]*models.Commit, error)
+	GetTotalCommitsByRepoName(repoName string, startDate, endDate time.Time) (int, error)
 	GetTopCommitAuthors(limit int) ([]*models.CommitAuthor, error)
 	GetTopCommitAuthorsByRepo(repoName string, limit int) ([]*models.CommitAuthor, error)
 	SaveCommitsFetchData(metadata models.CommitsFetchData) error
@@ -131,37 +132,52 @@ func (cp *CommitPersistence) CommitExists(sha string) (bool, error) {
 }
 
 func (cp *CommitPersistence) GetCommitsByRepoName(repoName string, limit, offset int, startDate, endDate time.Time) ([]*models.Commit, error) {
-    query := `
+	query := `
         SELECT id, sha, url, message, author_name, author_date, created_at, updated_at, repository_name
         FROM commits
         WHERE repository_name = $1 AND author_date >= $2 AND author_date <= $3
         ORDER BY author_date ASC
         LIMIT $4 OFFSET $5
     `
-    
-    rows, err := cp.db.Query(query, repoName, startDate, endDate, limit, offset)
-    if err != nil {
-        log.Println("Error querying commits by repository name:", err)
-        return nil, err
-    }
-    defer rows.Close()
 
-    var commits []*models.Commit
-    for rows.Next() {
-        var commit models.Commit
-        if err := rows.Scan(&commit.ID, &commit.SHA, &commit.URL, &commit.Message, &commit.AuthorName, &commit.AuthorDate, &commit.CreatedAt, &commit.UpdatedAt, &commit.RepositoryName); err != nil {
-            log.Println("Error scanning commit row:", err)
-            return nil, err
-        }
-        commits = append(commits, &commit)
-    }
+	rows, err := cp.db.Query(query, repoName, startDate, endDate, limit, offset)
+	if err != nil {
+		log.Println("Error querying commits by repository name:", err)
+		return nil, err
+	}
+	defer rows.Close()
 
-    if err := rows.Err(); err != nil {
-        log.Println("Error iterating through commits:", err)
-        return nil, err
-    }
+	var commits []*models.Commit
+	for rows.Next() {
+		var commit models.Commit
+		if err := rows.Scan(&commit.ID, &commit.SHA, &commit.URL, &commit.Message, &commit.AuthorName, &commit.AuthorDate, &commit.CreatedAt, &commit.UpdatedAt, &commit.RepositoryName); err != nil {
+			log.Println("Error scanning commit row:", err)
+			return nil, err
+		}
+		commits = append(commits, &commit)
+	}
 
-    return commits, nil
+	if err := rows.Err(); err != nil {
+		log.Println("Error iterating through commits:", err)
+		return nil, err
+	}
+
+	return commits, nil
+}
+
+func (cp *CommitPersistence) GetTotalCommitsByRepoName(repoName string, startDate, endDate time.Time) (int, error) {
+	query := `
+        SELECT COUNT(*)
+        FROM commits
+        WHERE repository_name = $1 AND author_date >= $2 AND author_date <= $3
+    `
+	var count int
+	err := cp.db.QueryRow(query, repoName, startDate, endDate).Scan(&count)
+	if err != nil {
+		log.Println("Error querying total commits by repository name:", err)
+		return 0, err
+	}
+	return count, nil
 }
 
 

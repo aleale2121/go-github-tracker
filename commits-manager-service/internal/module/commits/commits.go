@@ -24,3 +24,7 @@ func (rc CommitsManagerService) GetTopCommitAuthors(limit int) ([]*models.Commit
 func (rc CommitsManagerService) GetTopCommitAuthorsByRepoName(repoName string, limit int) ([]*models.CommitAuthor, error) {
 	return rc.CommitsPersistence.GetTopCommitAuthorsByRepo(repoName, limit)
 }
+
+func (rc CommitsManagerService) GetTotalCommitsByRepositoryName(repoName string, startDate, endDate time.Time) (int, error) {
+	return rc.CommitsPersistence.GetTotalCommitsByRepoName(repoName, startDate, endDate)
+}

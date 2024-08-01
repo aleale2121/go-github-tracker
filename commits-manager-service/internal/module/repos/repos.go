@@ -14,3 +14,7 @@ func NewRepositoryManagerService(repositoryPersistence db.GitReposRepository) Re
 func (rc RepositoryManagerService) GetRepositories(limit, offset int) ([]*models.Repository, error) {
 	return rc.RepositoryPersistence.GetAllRepositories(limit, offset)
 }
+
+func (rc RepositoryManagerService) GetTotalRepositories() (int, error) {
+	return rc.RepositoryPersistence.GetTotalRepositories()
+}
