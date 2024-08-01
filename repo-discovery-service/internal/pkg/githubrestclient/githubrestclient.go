@@ -50,10 +50,6 @@ func (gp GithubRestClient) FetchRepositories(since string) ([]models.RepositoryR
 		return nil, err
 	}
 
-	// Print the response body as a string
-	// bodyString := string(bodyBytes)
-	// fmt.Println("Fetch Response Body: ", bodyString)
-
 	var repositories []models.RepositoryResponse
 	err = json.Unmarshal(bodyBytes, &repositories)
 	if err != nil {
@@ -94,12 +90,12 @@ func (gp GithubRestClient) FetchRepositoryMetadata(repoName string) (models.Repo
 
 	// Print the response body as a string
 	// bodyString := string(bodyBytes)
-	// fmt.Println("Fetch Response Body: ", bodyString)
+	// fmt.Println("Fetch Repository Meta Data: ", bodyString)
 
 	var repository models.RepositoryResponse
 	err = json.Unmarshal(bodyBytes, &repository)
 	if err != nil {
-		log.Println("Error unmarshalling response body:", err)
+		log.Println("Error converting repo meta data:", err)
 		return models.RepositoryResponse{}, err
 	}
 

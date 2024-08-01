@@ -45,7 +45,7 @@ func main() {
 	timer := time.After(30 * time.Second)
 	<-timer
 
-	go reposdiscoveryservice.ScheduleFetchingNewRepository(time.Hour * 24)
+	go reposdiscoveryservice.ScheduleDiscoveringNewRepository(time.Hour * 24)
 
 	timer = time.After(30 * time.Second)
 	<-timer
