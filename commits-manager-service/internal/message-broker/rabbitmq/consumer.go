@@ -190,12 +190,12 @@ func (consumer *Consumer) proccessAndUpdateRepoMetaData(entry Payload) {
 	err := json.Unmarshal(jsonData, &repository)
 
 	if err == nil {
-		log.Println("Consumer-Recieved-Repository MetaData->", len(repository.Name))
+		log.Println("Consumer-Recieved-Repository MetaData->", repository.Name)
 
 		err := consumer.RepositoryPersistence.UpdateRepository(
 			ConvertRepositoryResponseToRepository(repository))
 		if err != nil {
-			fmt.Println("Consumer: Error updating repository ")
+			fmt.Println("Consumer: Error updating repository metadat")
 			fmt.Println("Consumer: ERR:", err)
 			return
 		}
