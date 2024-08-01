@@ -34,7 +34,7 @@ func main() {
 		GithubUsername: os.Getenv("GITHUB_USERNAME"),
 	})
 
-	reposMetaDataServiceClient := repos.NewReposMetaDataServiceClient(commitMangerUrl)
+	reposMetaDataServiceClient := repos.NewRepositoriesServiceClient(commitMangerUrl)
 	reposdiscoveryservice := reposdiscoveryservice.NewReposDiscoveryService(githubRestClient,
 		*reposMetaDataServiceClient,
 		rabbitConn)
@@ -42,10 +42,15 @@ func main() {
 	wait := make(chan bool)
 
 	// Wait 30 seconds until commit-manager service started
-    timer := time.After(30 * time.Second)
+	timer := time.After(30 * time.Second)
 	<-timer
 
-	go reposdiscoveryservice.ScheduleFetchingRepository(time.Hour * 24)
+	go reposdiscoveryservice.ScheduleFetchingNewRepository(time.Hour * 24)
+
+	timer = time.After(30 * time.Second)
+	<-timer
+
+	go reposdiscoveryservice.ScheduleFetchingRepositoryMetadata(time.Hour * 24 * 365)
 
 	<-wait
 

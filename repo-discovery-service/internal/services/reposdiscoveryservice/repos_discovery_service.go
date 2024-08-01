@@ -16,13 +16,13 @@ import (
 
 type ReposDiscoveryService struct {
 	GithubRestClient           githubrestclient.GithubRestClient
-	ReposMetaDataServiceClient rmdsc.ReposMetaDataServiceClient
+	ReposMetaDataServiceClient rmdsc.RepositoriesServiceClient
 	Rabbit                     *amqp.Connection
 }
 
 func NewReposDiscoveryService(
 	githubRestClient githubrestclient.GithubRestClient,
-	reposMetaDataServiceClient rmdsc.ReposMetaDataServiceClient,
+	reposMetaDataServiceClient rmdsc.RepositoriesServiceClient,
 	rabbit *amqp.Connection,
 ) ReposDiscoveryService {
 	return ReposDiscoveryService{
@@ -32,13 +32,23 @@ func NewReposDiscoveryService(
 	}
 }
 
-func (sc *ReposDiscoveryService) ScheduleFetchingRepository(interval time.Duration) {
+func (sc *ReposDiscoveryService) ScheduleFetchingNewRepository(interval time.Duration) {
 	log.Println("Fetching Repositories Started ")
-	sc.fetchAndSaveRepositories() //Initial Fetch
+	sc.fetchAndSaveRepositories()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for range ticker.C {
 		go sc.fetchAndSaveRepositories()
+	}
+}
+
+func (sc *ReposDiscoveryService) ScheduleFetchingRepositoryMetadata(interval time.Duration) {
+	log.Println("Fetching Repositories Metadata Started ")
+	sc.fetchRepositoriesMetadata()
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for range ticker.C {
+		go sc.fetchRepositoriesMetadata()
 	}
 }
 
@@ -63,11 +73,28 @@ func (sc *ReposDiscoveryService) fetchAndSaveRepositories() {
 	}
 
 	log.Println("total fetched repos: ", len(repositories))
-	sc.pushToQueue(fetchTime, repositories)
+	sc.pushNewRepositoriesToQueue(fetchTime, repositories)
 }
 
-// pushToQueue pushes a message into RabbitMQ
-func (sc *ReposDiscoveryService) pushToQueue(fetchTime time.Time, repos []models.RepositoryResponse) error {
+func (sc *ReposDiscoveryService) fetchRepositoriesMetadata() {
+	repositories, err := sc.ReposMetaDataServiceClient.GetRepositoryNames()
+	if err != nil {
+		log.Println("Error getting all repository names")
+		log.Println("ERR:", err)
+	}
+
+	for _, repoName := range repositories {
+		repository, err := sc.GithubRestClient.FetchRepositoryMetadata(repoName)
+		if err != nil {
+			log.Println("Error getting repository meta data")
+			log.Println("ERR:", err)
+		}
+		sc.pushRepositoryMetaDataToQueue(repository)
+	}
+}
+
+// pushNewRepositoriesToQueue pushes a message into RabbitMQ
+func (sc *ReposDiscoveryService) pushNewRepositoriesToQueue(fetchTime time.Time, repos []models.RepositoryResponse) error {
 	emitter, err := event.NewEventEmitter(sc.Rabbit)
 	if err != nil {
 		return err
@@ -79,6 +106,28 @@ func (sc *ReposDiscoveryService) pushToQueue(fetchTime time.Time, repos []models
 			FetchTime: fetchTime,
 			Repos:     repos,
 		},
+	}, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	err = emitter.Push(string(j), constants.REPOS_EVENT)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// pushRepositoryMetaDataToQueue pushes a message into RabbitMQ
+func (sc *ReposDiscoveryService) pushRepositoryMetaDataToQueue(repo models.RepositoryResponse) error {
+	emitter, err := event.NewEventEmitter(sc.Rabbit)
+	if err != nil {
+		return err
+	}
+
+	j, err := json.MarshalIndent(&event.Payload{
+		Name: "repo",
+		Data: repo,
 	}, "", "\t")
 	if err != nil {
 		return err

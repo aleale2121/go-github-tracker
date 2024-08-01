@@ -7,32 +7,50 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	rmds "repos-discovery-service/internal/http/grpc/protos/repos"
+	rs "repos-discovery-service/internal/http/grpc/protos/repos"
 )
 
-type ReposMetaDataServiceClient struct {
+type RepositoriesServiceClient struct {
 	ServiceUrl string
 }
 
-func NewReposMetaDataServiceClient(serviceUrl string) *ReposMetaDataServiceClient {
-	return &ReposMetaDataServiceClient{
+func NewRepositoriesServiceClient(serviceUrl string) *RepositoriesServiceClient {
+	return &RepositoriesServiceClient{
 		ServiceUrl: serviceUrl,
 	}
 }
 
+func (rmdsc RepositoriesServiceClient) GetRepositoryNames() ([]string, error) {
+	conn, err := grpc.NewClient(rmdsc.ServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return []string{}, err
+	}
+	defer conn.Close()
 
-func (rmdsc ReposMetaDataServiceClient) GetReposLastFetchTime() (string, error) {
+	c := rs.NewRepositoriesServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	response, err := c.GetRepositoryNames(ctx, &rs.GetRepositoryNamesRequest{})
+	if err != nil {
+		return []string{}, err
+	}
+	return response.Repositories, nil
+}
+
+
+func (rmdsc RepositoriesServiceClient) GetReposLastFetchTime() (string, error) {
 	conn, err := grpc.NewClient(rmdsc.ServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return "", err
 	}
 	defer conn.Close()
 
-	c := rmds.NewRepositoryMetaDataServiceClient(conn)
+	c := rs.NewRepositoriesServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	response, err := c.AllRepositoriesMetaData(ctx, &rmds.AllReposMetaDataRequest{})
+	response, err := c.GetReposFetchData(ctx, &rs.GetReposFetchDataRequest{})
 	if err != nil {
 		return "", err
 	}
