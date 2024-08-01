@@ -84,7 +84,6 @@ func (consumer *Consumer) Listen(topics []string) error {
 	forever := make(chan bool)
 	go func() {
 		for d := range messages {
-			log.Println("Consumer--Type--> ", d.Type)
 			var payload Payload
 			_ = json.Unmarshal(d.Body, &payload)
 
