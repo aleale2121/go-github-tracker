@@ -1,6 +1,7 @@
 CREATE TABLE repositories
 (
-    name VARCHAR(255) PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE,
     description TEXT,
     url VARCHAR(255) NOT NULL,
     language VARCHAR(255),
@@ -14,7 +15,8 @@ CREATE TABLE repositories
 
 CREATE TABLE commits
 (
-    sha VARCHAR(255) PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
+    sha VARCHAR(255) UNIQUE,
     url VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     author_name VARCHAR(255) NOT NULL,
@@ -22,16 +24,18 @@ CREATE TABLE commits
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     repository_name VARCHAR(255) NOT NULL,
-    FOREIGN KEY (repository_name) REFERENCES repositories(name)
+    FOREIGN KEY (repository_name) REFERENCES repositories(name) ON DELETE CASCADE
 );
 
-CREATE TABLE fetch_repos_metadata (
+CREATE TABLE fetch_repos_metadata
+(
     id BIGSERIAL PRIMARY KEY,
     total INT NOT NULL,
     fetched_at TIMESTAMPTZ NOT NULL
 );
 
-CREATE TABLE fetch_commits_metadata (
+CREATE TABLE fetch_commits_metadata
+(
     id BIGSERIAL PRIMARY KEY,
     repository_name VARCHAR(255) NOT NULL,
     total INT NOT NULL,
