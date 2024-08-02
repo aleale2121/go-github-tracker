@@ -14,6 +14,8 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const perPage = 30
+
 type ReposDiscoveryService struct {
 	GithubRestClient           githubrestclient.GithubRestClient
 	ReposMetaDataServiceClient rmdsc.RepositoriesServiceClient
@@ -33,7 +35,7 @@ func NewReposDiscoveryService(
 }
 
 func (sc *ReposDiscoveryService) ScheduleDiscoveringNewRepository(interval time.Duration) {
-	log.Println("Discovering New Repositories Started ")
+	log.Println("RDS: discovering New Repositories Started ")
 	sc.discoverAndSaveNewRepositories()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -43,7 +45,7 @@ func (sc *ReposDiscoveryService) ScheduleDiscoveringNewRepository(interval time.
 }
 
 func (sc *ReposDiscoveryService) ScheduleFetchingRepositoryMetadata(interval time.Duration) {
-	log.Println("Fetching Repositories Metadata Started ")
+	log.Println("RDS: fetching Repositories Metadata Started ")
 	sc.fetchRepositoriesMetadata()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -55,39 +57,52 @@ func (sc *ReposDiscoveryService) ScheduleFetchingRepositoryMetadata(interval tim
 func (sc *ReposDiscoveryService) discoverAndSaveNewRepositories() {
 	fetchTime := time.Now()
 	since, err := sc.ReposMetaDataServiceClient.GetReposLastFetchTime()
-	log.Println("last fetch time: ", since)
+	log.Println("RDS: last discovering repositories fetch time: ", since)
 	if err != nil {
-		log.Println("Error getting all repositories last fetch time")
-		log.Println("ERR:", err)
+		log.Println("RDS: Error getting all repositories last fetch time")
+		log.Println("RDS: ERR:", err)
 	}
 
 	if since == "0001-01-01T00:00:00Z" {
 		since = ""
 	}
 
-	repositories, err := sc.GithubRestClient.FetchRepositories(since)
-	if err != nil {
-		log.Println("Error fetching repositories ")
-		log.Println("ERR:", err)
-		return
+	page := 1
+	var totalRepositories int
+
+	for {
+		repositories, err := sc.GithubRestClient.FetchRepositories(since, perPage, page)
+		if err != nil {
+			log.Println("RDS: error fetching repositories ")
+			log.Println("RDS: err:", err)
+			return
+		}
+
+		if len(repositories) == 0 {
+			break
+		}
+		totalRepositories += len(repositories)
+		page++
+		log.Printf("RDS: pulled %d repositories \n", len(repositories))
+		sc.pushNewRepositoriesToQueue(fetchTime, repositories)
+
 	}
 
-	log.Println("total fetched repos: ", len(repositories))
-	sc.pushNewRepositoriesToQueue(fetchTime, repositories)
+	log.Println("RDS: total fetched repos: ", totalRepositories)
 }
 
 func (sc *ReposDiscoveryService) fetchRepositoriesMetadata() {
 	repositories, err := sc.ReposMetaDataServiceClient.GetRepositoryNames()
 	if err != nil {
-		log.Println("Error getting repository names")
-		log.Println("ERR:", err)
+		log.Println("RDS: error getting repository names")
+		log.Println("RDS: err: ", err)
 	}
 
 	for _, repoName := range repositories {
 		repository, err := sc.GithubRestClient.FetchRepositoryMetadata(repoName)
 		if err != nil {
-			log.Println("Error getting repository meta data")
-			log.Println("ERR:", err)
+			log.Println("RDS: error getting repository meta data")
+			log.Println("RDS: err:", err)
 		}
 		sc.pushRepositoryMetaDataToQueue(repository)
 	}

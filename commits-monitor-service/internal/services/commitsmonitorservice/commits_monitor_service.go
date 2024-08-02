@@ -15,6 +15,8 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const perPage = 100
+
 type CommentMonitorService struct {
 	GithubRestClient             githubrestclient.GithubRestClient
 	ReposMetaDataServiceClient   rmdsc.ReposMetaDataServiceClient
@@ -37,7 +39,6 @@ func NewCommentMonitorService(
 }
 
 func (sc *CommentMonitorService) ScheduleFetchingCommits(interval time.Duration) {
-	log.Println("Fetching Commits Started ")
 	sc.fetchAndSaveCommits()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -50,11 +51,11 @@ func (sc *CommentMonitorService) fetchAndSaveCommits() {
 	fetchTime := time.Now()
 	repositories, err := sc.ReposMetaDataServiceClient.GetRepositoryNames()
 	if err != nil {
-		log.Println("CM Error getting repository Names")
-		log.Println("CM ERR:", err)
+		log.Println("CMOS: error getting repository Names")
+		log.Println("CMOS: err:", err)
 		return
 	}
-	log.Printf("CM: fetching commits of %d repositories\n", len(repositories))
+	log.Printf("CMOS: fetching commits of %d repositories started\n", len(repositories))
 	var wg sync.WaitGroup
 	for _, repo := range repositories {
 		wg.Add(1)
@@ -69,25 +70,39 @@ func (sc *CommentMonitorService) fetchAndSaveCommits() {
 func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo string, fetchTime time.Time) {
 	since, err := sc.CommitsMetaDataServiceClient.GetRepoLastFetchTime(repo)
 	if err != nil {
-		log.Println("Error getting a repository last commit fetch time")
-		log.Println("ERR:", err)
+		log.Println("CMOS: error getting a repository last commit fetch time")
+		log.Println("CMOS: err:", err)
 	}
 
 	if since == "0001-01-01T00:00:00Z" {
 		since = ""
 	}
 
-	log.Printf("repo <%s> last fetched: %s\n", repo, since)
-	commits, err := sc.GithubRestClient.FetchCommits(repo, since)
-	if err != nil {
-		log.Println("CM Error fetching commits of ", repo)
-		log.Println("CM ERR:", err)
-		return
+	page := 1
+
+	var totalCommitsFetched int
+
+	for {
+		commits, err := sc.GithubRestClient.FetchCommits(repo, since, perPage, page)
+		if err != nil {
+			log.Println("CMOS: error fetching commits of ", repo)
+			log.Println("CMOS: err:", err)
+			return
+		}
+
+		if len(commits) == 0 {
+			break
+		}
+		
+		log.Printf("CMOS: pulled %d commits %s \n", len(commits), repo)
+
+		sc.pushToQueue(repo, fetchTime, commits)
+
+		totalCommitsFetched += len(commits)
+		page++
 	}
 
-	log.Printf("repo <%s>  total commits: %d\n", repo, len(commits))
-	sc.pushToQueue(repo, fetchTime, commits)
-
+	log.Printf("CMOS: repo <%s>  total commits: %d pulled\n", repo, totalCommitsFetched)
 }
 
 // pushToQueue pushes a message into RabbitMQ
