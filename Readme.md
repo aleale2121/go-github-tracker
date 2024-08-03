@@ -148,11 +148,14 @@ commits-manager-service.
     - change you directory to project folder
 
     - Update `app.env` with your GitHub token and username:
+    - Specify the START_DATE and END_DATE to fetch commits
 
     ```markdown
     DSN=host=postgres port=5432 user=postgres password=password dbname=github_tracker sslmode=disable timezone=UTC connect_timeout=5
-    GITHUB_TOKEN=""
-    GITHUB_USERNAME=""
+    GITHUB_TOKEN=
+    GITHUB_USERNAME=chromium
+    START_DATE=2024-08-02T18:21:46Z
+    END_DATE=2024-10-03T10:01:20Z
     ```
 
 2. **Build and Run:**
