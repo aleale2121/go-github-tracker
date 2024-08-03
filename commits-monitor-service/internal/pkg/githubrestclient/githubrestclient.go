@@ -32,12 +32,10 @@ func buildURI(base string, path string, queryParams map[string]string) string {
 	return u.String()
 }
 
-func (gp GithubRestClient) FetchCommits(repositoryName, since string, perPage, page int) ([]models.CommitResponse, error) {
+func (gp GithubRestClient) FetchCommits(repositoryName string, perPage, page int32) ([]models.CommitResponse, error) {
 	path := fmt.Sprintf("/repos/%s/%s/commits", gp.Config.GithubUsername, repositoryName)
 	queryParams := map[string]string{}
-	if since != "" {
-		queryParams["since"] = since
-	}
+	
 	queryParams["per_page"] = fmt.Sprintf("%d", perPage)
 	queryParams["page"] = fmt.Sprintf("%d", page)
 

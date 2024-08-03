@@ -14,7 +14,7 @@ type ReposMetaDataServer struct {
 }
 
 func (rmds *ReposMetaDataServer) GetRepositories(ctx context.Context, req *repos.GetRepositoriesRequest) (*repos.GetRepositoriesResponse, error) {
-	repositories, err := rmds.RepositoryPersistence.GetAllRepositories(1000000,0)
+	repositories, err := rmds.RepositoryPersistence.GetAllRepositories(1000000, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -33,13 +33,14 @@ func (rmds *ReposMetaDataServer) GetRepositoryNames(ctx context.Context, req *re
 	}, nil
 }
 
-func (rmds *ReposMetaDataServer) GetReposFetchData(ctx context.Context, req *repos.GetReposFetchDataRequest) (*repos.GetReposFetchDataResponse, error) {
-	lastFetchTime, err := rmds.RepositoryPersistence.GetLastReposFetchTime()
+func (rmds *ReposMetaDataServer) GetReposFetchHistory(ctx context.Context, req *repos.GetReposFetchHistoryRequest) (*repos.GetReposFetchHistoryResponse, error) {
+	reposFetchData, err := rmds.RepositoryPersistence.GetLastReposFetchHistory()
 	if err != nil {
 		return nil, err
 	}
-	return &repos.GetReposFetchDataResponse{
-		LastFetchTime: lastFetchTime.UTC().Format(constants.ISO_8601_TIME_LAYOUT),
+	return &repos.GetReposFetchHistoryResponse{
+		LastFetchTime: reposFetchData.FetchedAt.UTC().Format(constants.ISO_8601_TIME_LAYOUT),
+		LastPage:      int32(reposFetchData.LastPage),
 	}, nil
 }
 

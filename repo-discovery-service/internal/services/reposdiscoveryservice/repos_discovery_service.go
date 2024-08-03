@@ -55,23 +55,18 @@ func (sc *ReposDiscoveryService) ScheduleFetchingRepositoryMetadata(interval tim
 }
 
 func (sc *ReposDiscoveryService) discoverAndSaveNewRepositories() {
-	fetchTime := time.Now()
-	since, err := sc.ReposMetaDataServiceClient.GetReposLastFetchTime()
-	log.Println("RDS: last discovering repositories fetch time: ", since)
+	repoFetchHistory, err := sc.ReposMetaDataServiceClient.GetReposFetchHistory()
 	if err != nil {
 		log.Println("RDS: Error getting all repositories last fetch time")
 		log.Println("RDS: ERR:", err)
 	}
 
-	if since == "0001-01-01T00:00:00Z" {
-		since = ""
-	}
-
-	page := 1
+	page := int(repoFetchHistory.LastPage + 1)
 	var totalRepositories int
+	log.Printf("RDS: discovering new repositoy started from page ->: %d /n", page)
 
 	for {
-		repositories, err := sc.GithubRestClient.FetchRepositories(since, perPage, page)
+		repositories, err := sc.GithubRestClient.FetchRepositories(perPage, page)
 		if err != nil {
 			log.Println("RDS: error fetching repositories ")
 			log.Println("RDS: err:", err)
@@ -81,11 +76,14 @@ func (sc *ReposDiscoveryService) discoverAndSaveNewRepositories() {
 		if len(repositories) == 0 {
 			break
 		}
+
+		log.Printf("RDS: pulled %d repositories \n", len(repositories))
+		
+		fetchTime := repositories[len(repositories)-1].CreatedAt
+		sc.pushNewRepositoriesToQueue(fetchTime, page, repositories)
+
 		totalRepositories += len(repositories)
 		page++
-		log.Printf("RDS: pulled %d repositories \n", len(repositories))
-		sc.pushNewRepositoriesToQueue(fetchTime, repositories)
-
 	}
 
 	log.Println("RDS: total fetched repos: ", totalRepositories)
@@ -109,7 +107,7 @@ func (sc *ReposDiscoveryService) fetchRepositoriesMetadata() {
 }
 
 // pushNewRepositoriesToQueue pushes a message into RabbitMQ
-func (sc *ReposDiscoveryService) pushNewRepositoriesToQueue(fetchTime time.Time, repos []models.RepositoryResponse) error {
+func (sc *ReposDiscoveryService) pushNewRepositoriesToQueue(fetchTime time.Time, lastPage int, repos []models.RepositoryResponse) error {
 	emitter, err := event.NewEventEmitter(sc.Rabbit)
 	if err != nil {
 		return err
@@ -120,6 +118,7 @@ func (sc *ReposDiscoveryService) pushNewRepositoriesToQueue(fetchTime time.Time,
 		Data: ReposMetaData{
 			FetchTime: fetchTime,
 			Repos:     repos,
+			LastPage:  lastPage,
 		},
 	}, "", "\t")
 	if err != nil {
@@ -156,6 +155,7 @@ func (sc *ReposDiscoveryService) pushRepositoryMetaDataToQueue(repo models.Repos
 }
 
 type ReposMetaData struct {
+	LastPage  int
 	FetchTime time.Time
 	Repos     []models.RepositoryResponse
 }

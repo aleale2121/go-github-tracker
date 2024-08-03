@@ -31,17 +31,13 @@ func buildURI(base string, path string, queryParams map[string]string) string {
 	return u.String()
 }
 
-func (gp GithubRestClient) FetchRepositories(since string, perPage, page int) ([]models.RepositoryResponse, error) {
+func (gp GithubRestClient) FetchRepositories(perPage, page int) ([]models.RepositoryResponse, error) {
 	path := fmt.Sprintf("/users/%s/repos", gp.Config.GithubUsername)
 	queryParams := map[string]string{
-		"sort":      "updated",
+		"sort":      "created",
 		"direction": "desc",
 		"per_page":  fmt.Sprintf("%d", perPage),
 		"page":      fmt.Sprintf("%d", page),
-	}
-
-	if since != "" {
-		queryParams["since"] = since
 	}
 
 	fetchRepoUrl := buildURI(baseURL, path, queryParams)

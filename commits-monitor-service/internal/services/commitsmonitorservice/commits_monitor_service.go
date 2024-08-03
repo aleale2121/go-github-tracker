@@ -48,7 +48,6 @@ func (sc *CommentMonitorService) ScheduleFetchingCommits(interval time.Duration)
 }
 
 func (sc *CommentMonitorService) fetchAndSaveCommits() {
-	fetchTime := time.Now()
 	repositories, err := sc.ReposMetaDataServiceClient.GetRepositoryNames()
 	if err != nil {
 		log.Println("CMOS: error getting repository Names")
@@ -61,29 +60,27 @@ func (sc *CommentMonitorService) fetchAndSaveCommits() {
 		wg.Add(1)
 		go func(repo string) {
 			defer wg.Done()
-			sc.fetchAndSaveCommitsForRepo(repo, fetchTime)
+			sc.fetchAndSaveCommitsForRepo(repo)
 		}(repo)
 	}
 	wg.Wait()
 }
 
-func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo string, fetchTime time.Time) {
-	since, err := sc.CommitsMetaDataServiceClient.GetRepoLastFetchTime(repo)
+func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo string) {
+	commitFetchHistory, err := sc.CommitsMetaDataServiceClient.GetCommitFetchHistory(repo)
 	if err != nil {
-		log.Println("CMOS: error getting a repository last commit fetch time")
+		log.Println("CMOS: error getting a repository last commit fetch history")
 		log.Println("CMOS: err:", err)
 	}
 
-	if since == "0001-01-01T00:00:00Z" {
-		since = ""
-	}
+	page := commitFetchHistory.LastPage + 1
 
-	page := 1
+	log.Printf("CMOS: fetching commits of <%s> started from page=> %d\n", repo, page)
 
 	var totalCommitsFetched int
 
 	for {
-		commits, err := sc.GithubRestClient.FetchCommits(repo, since, perPage, page)
+		commits, err := sc.GithubRestClient.FetchCommits(repo, perPage, page)
 		if err != nil {
 			log.Println("CMOS: error fetching commits of ", repo)
 			log.Println("CMOS: err:", err)
@@ -93,10 +90,11 @@ func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo string, fetchTi
 		if len(commits) == 0 {
 			break
 		}
-		
+        
 		log.Printf("CMOS: pulled %d commits %s \n", len(commits), repo)
-
-		sc.pushToQueue(repo, fetchTime, commits)
+		
+		fetchTime := commits[len(commits)-1].Commit.Author.Date
+		sc.pushToQueue(repo, fetchTime, page, commits)
 
 		totalCommitsFetched += len(commits)
 		page++
@@ -106,7 +104,7 @@ func (sc *CommentMonitorService) fetchAndSaveCommitsForRepo(repo string, fetchTi
 }
 
 // pushToQueue pushes a message into RabbitMQ
-func (sc *CommentMonitorService) pushToQueue(repoName string, fetchTime time.Time, commits []models.CommitResponse) error {
+func (sc *CommentMonitorService) pushToQueue(repoName string, fetchTime time.Time, lastPage int32, commits []models.CommitResponse) error {
 	emitter, err := event.NewEventEmitter(sc.Rabbit)
 	if err != nil {
 		return err
@@ -118,6 +116,7 @@ func (sc *CommentMonitorService) pushToQueue(repoName string, fetchTime time.Tim
 			Repository: repoName,
 			FetchTime:  fetchTime,
 			Commits:    commits,
+			LastPage:   int(lastPage),
 		},
 	}, "", "\t")
 	if err != nil {
@@ -132,6 +131,7 @@ func (sc *CommentMonitorService) pushToQueue(repoName string, fetchTime time.Tim
 }
 
 type CommitMetaData struct {
+	LastPage   int
 	Repository string
 	FetchTime  time.Time
 	Commits    []models.CommitResponse

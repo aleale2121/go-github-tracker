@@ -128,10 +128,11 @@ func (consumer *Consumer) proccessAndSaveCommits(entry Payload) {
 				return
 			}
 
-			err = consumer.CommitPersistence.SaveCommitsFetchData(models.CommitsFetchData{
+			err = consumer.CommitPersistence.SaveCommitsFetchData(models.CommitsFetchHistory{
 				RepositoryName: commitMetaData.Repository,
 				FetchedAt:      commitMetaData.FetchTime,
 				Total:          len(commits),
+				LastPage:       commitMetaData.LastPage,
 			})
 
 			if err != nil {
@@ -166,9 +167,10 @@ func (consumer *Consumer) proccessAndSaveNewRepos(entry Payload) {
 				fmt.Println("Consumer: ERR:", err)
 				return
 			}
-			err = consumer.RepositoryPersistence.SaveReposFetchData(models.ReposFetchData{
+			err = consumer.RepositoryPersistence.SaveReposFetchHistory(models.ReposFetchHistory{
 				FetchedAt: reposMetaData.FetchTime,
 				Total:     len(repositories),
+				LastPage:  reposMetaData.LastPage,
 			})
 
 			if err != nil {

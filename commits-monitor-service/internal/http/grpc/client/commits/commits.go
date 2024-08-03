@@ -20,10 +20,10 @@ func NewCommitsMetaDataServiceClient(serviceUrl string) *CommitsMetaDataServiceC
 	}
 }
 
-func (rmdsc CommitsMetaDataServiceClient) GetRepoLastFetchTime(repoName string) (string, error) {
-	conn, err := grpc.NewClient(rmdsc.ServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+func (rmdsc CommitsMetaDataServiceClient) GetCommitFetchHistory(repoName string) (*cmds.CommitFetchHistoryResponse, error) {
+	conn, err := grpc.NewClient(rmdsc.ServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return "", err
+		return &cmds.CommitFetchHistoryResponse{}, err
 	}
 	defer conn.Close()
 
@@ -31,11 +31,11 @@ func (rmdsc CommitsMetaDataServiceClient) GetRepoLastFetchTime(repoName string) 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	response, err := c.GetRepoCommitFetchData(ctx, &cmds.RepoCommiFetchDataRequest{
+	response, err := c.GetCommitFetchHistory(ctx, &cmds.CommitFetchHistoryRequest{
 		RepositoryName: repoName,
 	})
 	if err != nil {
-		return "", err
+		return &cmds.CommitFetchHistoryResponse{}, err
 	}
-	return response.LastFetchTime, nil
+	return response, nil
 }

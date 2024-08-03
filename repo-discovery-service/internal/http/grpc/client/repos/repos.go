@@ -38,11 +38,10 @@ func (rmdsc RepositoriesServiceClient) GetRepositoryNames() ([]string, error) {
 	return response.Repositories, nil
 }
 
-
-func (rmdsc RepositoriesServiceClient) GetReposLastFetchTime() (string, error) {
+func (rmdsc RepositoriesServiceClient) GetReposFetchHistory() (*rs.GetReposFetchHistoryResponse, error) {
 	conn, err := grpc.NewClient(rmdsc.ServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return "", err
+		return &rs.GetReposFetchHistoryResponse{}, err
 	}
 	defer conn.Close()
 
@@ -50,9 +49,12 @@ func (rmdsc RepositoriesServiceClient) GetReposLastFetchTime() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	response, err := c.GetReposFetchData(ctx, &rs.GetReposFetchDataRequest{})
+	response, err := c.GetReposFetchHistory(ctx, &rs.GetReposFetchHistoryRequest{})
 	if err != nil {
-		return "", err
+		return &rs.GetReposFetchHistoryResponse{}, err
 	}
-	return response.LastFetchTime, nil
+	return &rs.GetReposFetchHistoryResponse{
+		LastFetchTime: response.LastFetchTime,
+		LastPage:      response.LastPage,
+	}, nil
 }

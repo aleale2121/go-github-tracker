@@ -21,7 +21,7 @@ func NewReposMetaDataServiceClient(serviceUrl string) *ReposMetaDataServiceClien
 }
 
 func (rmdsc ReposMetaDataServiceClient) GetRepositories() ([]*rmds.Repository, error) {
-	conn, err := grpc.NewClient(rmdsc.ServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	conn, err := grpc.NewClient(rmdsc.ServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
