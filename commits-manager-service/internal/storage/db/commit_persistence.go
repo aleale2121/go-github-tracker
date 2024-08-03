@@ -20,8 +20,8 @@ type CommitRepository interface {
 	GetTotalCommitsByRepoName(repoName string, startDate, endDate time.Time) (int, error)
 	GetTopCommitAuthors(limit int) ([]*models.CommitAuthor, error)
 	GetTopCommitAuthorsByRepo(repoName string, limit int) ([]*models.CommitAuthor, error)
-	SaveCommitsFetchData(metadata models.CommitsFetchData) error
-	GetLastCommitFetchTime(repositoryName string) (time.Time, error)
+	SaveCommitsFetchData(metadata models.CommitsFetchHistory) error
+	GetLastCommitFetchTime(repositoryName string) (*models.CommitsFetchHistory, error)
 }
 
 type CommitPersistence struct {
@@ -234,9 +234,9 @@ func (cp *CommitPersistence) GetTopCommitAuthorsByRepo(repoName string, limit in
 	return authors, nil
 }
 
-func (cp *CommitPersistence) SaveCommitsFetchData(metadata models.CommitsFetchData) error {
-	stmt := `INSERT INTO fetch_commits_metadata (repository_name, total, fetched_at) VALUES ($1, $2, $3)`
-	_, err := cp.db.Exec(stmt, metadata.RepositoryName, metadata.Total, metadata.FetchedAt)
+func (cp *CommitPersistence) SaveCommitsFetchData(metadata models.CommitsFetchHistory) error {
+	stmt := `INSERT INTO commits_fetch_history (repository_name, total, last_page, fetched_at) VALUES ($1, $2, $3, $4)`
+	_, err := cp.db.Exec(stmt, metadata.RepositoryName, metadata.Total, metadata.LastPage, metadata.FetchedAt)
 	if err != nil {
 		log.Println("Error inserting fetch commits metadata:", err)
 		return err
@@ -244,13 +244,16 @@ func (cp *CommitPersistence) SaveCommitsFetchData(metadata models.CommitsFetchDa
 	return nil
 }
 
-func (cp *CommitPersistence) GetLastCommitFetchTime(repositoryName string) (time.Time, error) {
-	var fetchedAt time.Time
-	query := `SELECT COALESCE(MAX(fetched_at), '1970-01-01 00:00:00') FROM fetch_commits_metadata WHERE repository_name = $1`
-	err := cp.db.QueryRow(query, repositoryName).Scan(&fetchedAt)
+func (cp *CommitPersistence) GetLastCommitFetchTime(repositoryName string) (*models.CommitsFetchHistory, error) {
+	var commitsFetchHistory models.CommitsFetchHistory
+	query := `SELECT id, repository_name, total, last_page, fetched_at FROM commits_fetch_history WHERE repository_name = $1 AND last_page = (SELECT MAX(last_page) FROM commits_fetch_history WHERE repository_name = $1)`
+	err := cp.db.QueryRow(query, repositoryName).Scan(&commitsFetchHistory.ID, &commitsFetchHistory.RepositoryName, &commitsFetchHistory.Total, &commitsFetchHistory.LastPage, &commitsFetchHistory.FetchedAt)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return &commitsFetchHistory, nil
+		}
 		log.Println("Error getting last commit fetch time:", err)
-		return time.Time{}, err
+		return nil, err
 	}
-	return fetchedAt, nil
+	return &commitsFetchHistory, nil
 }

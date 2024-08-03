@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"time"
 )
 
 type GitReposRepository interface {
@@ -19,8 +18,8 @@ type GitReposRepository interface {
 	RepositoryExists(name string) (bool, error)
 	GetTotalRepositories() (int, error)
 
-	SaveReposFetchData(metadata models.ReposFetchData) error
-	GetLastReposFetchTime() (time.Time, error)
+	SaveReposFetchHistory(metadata models.ReposFetchHistory) error
+	GetLastReposFetchHistory() (*models.ReposFetchHistory, error)
 }
 type RepositoryPersistence struct {
 	db *sql.DB
@@ -169,10 +168,10 @@ func (rp *RepositoryPersistence) RepositoryExists(name string) (bool, error) {
 	return exists, err
 }
 
-// SaveReposFetchData saves metadata for fetching repositories.
-func (rp *RepositoryPersistence) SaveReposFetchData(metadata models.ReposFetchData) error {
-	stmt := `INSERT INTO fetch_repos_metadata (total, fetched_at) VALUES ($1, $2)`
-	_, err := rp.db.Exec(stmt, metadata.Total, metadata.FetchedAt)
+// SaveReposFetchHistory saves metadata for fetching repositories.
+func (rp *RepositoryPersistence) SaveReposFetchHistory(metadata models.ReposFetchHistory) error {
+	stmt := `INSERT INTO repos_fetch_history (total, last_page, fetched_at) VALUES ($1, $2, $3)`
+	_, err := rp.db.Exec(stmt, metadata.Total, metadata.LastPage, metadata.FetchedAt)
 	if err != nil {
 		log.Println("Error inserting fetch repos metadata:", err)
 		return err
@@ -180,18 +179,24 @@ func (rp *RepositoryPersistence) SaveReposFetchData(metadata models.ReposFetchDa
 	return nil
 }
 
-// GetLastReposFetchTime returns the last repository fetch time.
-func (rp *RepositoryPersistence) GetLastReposFetchTime() (time.Time, error) {
-	var fetchedAt time.Time
-	err := rp.db.QueryRow("SELECT fetched_at FROM fetch_repos_metadata ORDER BY fetched_at DESC LIMIT 1").Scan(&fetchedAt)
+// GetLastReposFetchHistory returns the last repository fetch time.
+func (rp *RepositoryPersistence) GetLastReposFetchHistory() (*models.ReposFetchHistory, error) {
+	var reposFetchHistory models.ReposFetchHistory
+	query := `SELECT id, total, last_page, fetched_at 
+	          FROM repos_fetch_history 
+	          WHERE last_page = (SELECT MAX(last_page) FROM repos_fetch_history) 
+	          ORDER BY fetched_at DESC LIMIT 1`
+	err := rp.db.QueryRow(query).Scan(
+		&reposFetchHistory.ID, &reposFetchHistory.Total, &reposFetchHistory.LastPage, &reposFetchHistory.FetchedAt,
+	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return time.Time{}, nil
+			return &reposFetchHistory, nil
 		}
 		log.Println("Error querying last repository fetch time:", err)
-		return time.Time{}, err
+		return nil, err
 	}
-	return fetchedAt, nil
+	return &reposFetchHistory, nil
 }
 
 func (rp *RepositoryPersistence) GetTotalRepositories() (int, error) {
