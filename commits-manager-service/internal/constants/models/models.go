@@ -35,16 +35,17 @@ type CommitAuthor struct {
 	CommitCount int    `json:"commit_count"`
 }
 
-
-type ReposFetchData struct {
+type ReposFetchHistory struct {
 	ID        int64
 	Total     int
+	LastPage  int
 	FetchedAt time.Time
 }
 
-type CommitsFetchData struct {
+type CommitsFetchHistory struct {
 	ID             int64
 	RepositoryName string
+	LastPage       int
 	Total          int
 	FetchedAt      time.Time
 }

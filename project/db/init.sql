@@ -27,18 +27,20 @@ CREATE TABLE commits
     FOREIGN KEY (repository_name) REFERENCES repositories(name) ON DELETE CASCADE
 );
 
-CREATE TABLE fetch_repos_metadata
+CREATE TABLE repos_fetch_history
 (
     id BIGSERIAL PRIMARY KEY,
     total INT NOT NULL,
+    last_page INT NOT NULL,
     fetched_at TIMESTAMPTZ NOT NULL
 );
 
-CREATE TABLE fetch_commits_metadata
+CREATE TABLE commits_fetch_history
 (
     id BIGSERIAL PRIMARY KEY,
     repository_name VARCHAR(255) NOT NULL,
     total INT NOT NULL,
+    last_page INT NOT NULL,
     fetched_at TIMESTAMPTZ NOT NULL,
     FOREIGN KEY (repository_name) REFERENCES repositories(name)
 );
