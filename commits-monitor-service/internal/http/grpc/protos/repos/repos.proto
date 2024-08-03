@@ -6,7 +6,7 @@ option go_package="/repos";
 
 service RepositoriesService {
     rpc GetRepositories (GetRepositoriesRequest) returns (GetRepositoriesResponse);
-    rpc GetReposFetchData (GetReposFetchDataRequest) returns (GetReposFetchDataResponse);
+    rpc GetReposFetchHistory (GetReposFetchHistoryRequest) returns (GetReposFetchHistoryResponse);
     rpc GetRepositoryNames (GetRepositoryNamesRequest) returns (GetRepositoryNamesResponse);
 }
 
@@ -28,10 +28,11 @@ message GetRepositoriesResponse {
   repeated Repository repositories = 1;
 }
 
-message GetReposFetchDataRequest{}
+message GetReposFetchHistoryRequest{}
 
-message GetReposFetchDataResponse{
+message GetReposFetchHistoryResponse{
   string lastFetchTime = 1;
+  int32  lastPage = 2;
 }
 
 message GetRepositoryNamesRequest {}

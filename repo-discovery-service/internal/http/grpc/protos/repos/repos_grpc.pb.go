@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RepositoriesServiceClient interface {
 	GetRepositories(ctx context.Context, in *GetRepositoriesRequest, opts ...grpc.CallOption) (*GetRepositoriesResponse, error)
-	GetReposFetchData(ctx context.Context, in *GetReposFetchDataRequest, opts ...grpc.CallOption) (*GetReposFetchDataResponse, error)
+	GetReposFetchHistory(ctx context.Context, in *GetReposFetchHistoryRequest, opts ...grpc.CallOption) (*GetReposFetchHistoryResponse, error)
 	GetRepositoryNames(ctx context.Context, in *GetRepositoryNamesRequest, opts ...grpc.CallOption) (*GetRepositoryNamesResponse, error)
 }
 
@@ -44,9 +44,9 @@ func (c *repositoriesServiceClient) GetRepositories(ctx context.Context, in *Get
 	return out, nil
 }
 
-func (c *repositoriesServiceClient) GetReposFetchData(ctx context.Context, in *GetReposFetchDataRequest, opts ...grpc.CallOption) (*GetReposFetchDataResponse, error) {
-	out := new(GetReposFetchDataResponse)
-	err := c.cc.Invoke(ctx, "/repos.RepositoriesService/GetReposFetchData", in, out, opts...)
+func (c *repositoriesServiceClient) GetReposFetchHistory(ctx context.Context, in *GetReposFetchHistoryRequest, opts ...grpc.CallOption) (*GetReposFetchHistoryResponse, error) {
+	out := new(GetReposFetchHistoryResponse)
+	err := c.cc.Invoke(ctx, "/repos.RepositoriesService/GetReposFetchHistory", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (c *repositoriesServiceClient) GetRepositoryNames(ctx context.Context, in *
 // for forward compatibility
 type RepositoriesServiceServer interface {
 	GetRepositories(context.Context, *GetRepositoriesRequest) (*GetRepositoriesResponse, error)
-	GetReposFetchData(context.Context, *GetReposFetchDataRequest) (*GetReposFetchDataResponse, error)
+	GetReposFetchHistory(context.Context, *GetReposFetchHistoryRequest) (*GetReposFetchHistoryResponse, error)
 	GetRepositoryNames(context.Context, *GetRepositoryNamesRequest) (*GetRepositoryNamesResponse, error)
 	mustEmbedUnimplementedRepositoriesServiceServer()
 }
@@ -79,8 +79,8 @@ type UnimplementedRepositoriesServiceServer struct {
 func (UnimplementedRepositoriesServiceServer) GetRepositories(context.Context, *GetRepositoriesRequest) (*GetRepositoriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRepositories not implemented")
 }
-func (UnimplementedRepositoriesServiceServer) GetReposFetchData(context.Context, *GetReposFetchDataRequest) (*GetReposFetchDataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetReposFetchData not implemented")
+func (UnimplementedRepositoriesServiceServer) GetReposFetchHistory(context.Context, *GetReposFetchHistoryRequest) (*GetReposFetchHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReposFetchHistory not implemented")
 }
 func (UnimplementedRepositoriesServiceServer) GetRepositoryNames(context.Context, *GetRepositoryNamesRequest) (*GetRepositoryNamesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRepositoryNames not implemented")
@@ -116,20 +116,20 @@ func _RepositoriesService_GetRepositories_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RepositoriesService_GetReposFetchData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetReposFetchDataRequest)
+func _RepositoriesService_GetReposFetchHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReposFetchHistoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RepositoriesServiceServer).GetReposFetchData(ctx, in)
+		return srv.(RepositoriesServiceServer).GetReposFetchHistory(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/repos.RepositoriesService/GetReposFetchData",
+		FullMethod: "/repos.RepositoriesService/GetReposFetchHistory",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoriesServiceServer).GetReposFetchData(ctx, req.(*GetReposFetchDataRequest))
+		return srv.(RepositoriesServiceServer).GetReposFetchHistory(ctx, req.(*GetReposFetchHistoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -164,8 +164,8 @@ var RepositoriesService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RepositoriesService_GetRepositories_Handler,
 		},
 		{
-			MethodName: "GetReposFetchData",
-			Handler:    _RepositoriesService_GetReposFetchData_Handler,
+			MethodName: "GetReposFetchHistory",
+			Handler:    _RepositoriesService_GetReposFetchHistory_Handler,
 		},
 		{
 			MethodName: "GetRepositoryNames",
