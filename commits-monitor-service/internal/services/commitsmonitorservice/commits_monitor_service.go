@@ -15,7 +15,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const perPage = 100
+const perPage = 10
 
 type CommentMonitorService struct {
 	GithubRestClient             githubrestclient.GithubRestClient

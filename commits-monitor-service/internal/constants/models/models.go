@@ -33,7 +33,6 @@ type CommitAuthor struct {
 	CommitCount int    `json:"commit_count"`
 }
 
-
 type FetchReposMetadata struct {
 	ID        int64
 	Total     int
@@ -51,6 +50,8 @@ type Config struct {
 	DSN            string `json:"dsn"`
 	GithubToken    string `json:"github_token"`
 	GithubUsername string `json:"github_username"`
+	StartDate      string
+	EndDate        string
 }
 
 type RepositoryReponse struct {

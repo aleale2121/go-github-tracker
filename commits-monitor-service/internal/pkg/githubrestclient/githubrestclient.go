@@ -1,13 +1,13 @@
 package githubrestclient
 
 import (
+	"commits-monitor-service/internal/constants/models"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
-	"commits-monitor-service/internal/constants/models"
 )
 
 type GithubRestClient struct {
@@ -35,9 +35,11 @@ func buildURI(base string, path string, queryParams map[string]string) string {
 func (gp GithubRestClient) FetchCommits(repositoryName string, perPage, page int32) ([]models.CommitResponse, error) {
 	path := fmt.Sprintf("/repos/%s/%s/commits", gp.Config.GithubUsername, repositoryName)
 	queryParams := map[string]string{}
-	
+
 	queryParams["per_page"] = fmt.Sprintf("%d", perPage)
 	queryParams["page"] = fmt.Sprintf("%d", page)
+	queryParams["since"] = gp.Config.StartDate
+	queryParams["until"] = gp.Config.EndDate
 
 	fetchRepoUrl := buildURI(baseURL, path, queryParams)
 

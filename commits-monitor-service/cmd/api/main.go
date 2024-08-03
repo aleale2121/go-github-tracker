@@ -1,6 +1,7 @@
 package main
 
 import (
+	"commits-monitor-service/internal/constants"
 	"commits-monitor-service/internal/constants/models"
 	"commits-monitor-service/internal/http/grpc/client/commits"
 	"commits-monitor-service/internal/http/grpc/client/repos"
@@ -20,7 +21,21 @@ import (
 const commitMangerUrl = "commits-manager-service:50001"
 
 func main() {
+	startDate := "1970-10-03T10:01:20Z"
+	_, err := time.Parse(constants.ISO_8601_TIME_LAYOUT, os.Getenv("START_DATE"))
+	if err != nil {
+		log.Println("Cannot parse start date: ", err)
+	} else {
+		startDate = os.Getenv("START_DATE")
+	}
 
+	endDate := "2098-10-03T10:01:20Z"
+	_, err = time.Parse(constants.ISO_8601_TIME_LAYOUT, os.Getenv("END_DATE"))
+	if err != nil {
+		log.Println("Cannot parse end date: ", err)
+	} else {
+		endDate = os.Getenv("END_DATE")
+	}
 	// try to connect to rabbitmq
 	rabbitConn, err := connect()
 	if err != nil {
@@ -32,6 +47,8 @@ func main() {
 	githubRestClient := githubrestclient.NewGithubRestClient(&models.Config{
 		GithubToken:    os.Getenv("GITHUB_TOKEN"),
 		GithubUsername: os.Getenv("GITHUB_USERNAME"),
+		StartDate:      startDate,
+		EndDate:        endDate,
 	})
 
 	commitMetaDataServiceClient := commits.NewCommitsMetaDataServiceClient(commitMangerUrl)
