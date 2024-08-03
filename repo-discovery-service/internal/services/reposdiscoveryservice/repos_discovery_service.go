@@ -14,7 +14,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const perPage = 30
+const perPage = 10
 
 type ReposDiscoveryService struct {
 	GithubRestClient           githubrestclient.GithubRestClient
