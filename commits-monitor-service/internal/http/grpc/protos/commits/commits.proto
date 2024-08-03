@@ -5,14 +5,15 @@ package commits;
 option go_package="/commits";
 
 service CommitsService{
-    rpc GetRepoCommitFetchData (RepoCommiFetchDataRequest) returns (RepoCommitFetchDataResponse);
+    rpc GetCommitFetchHistory (CommitFetchHistoryRequest) returns (CommitFetchHistoryResponse);
 }
 
 
-message RepoCommiFetchDataRequest{
+message CommitFetchHistoryRequest{
     string repositoryName = 1;
 }
 
-message RepoCommitFetchDataResponse{
+message CommitFetchHistoryResponse{
     string lastFetchTime = 1;
+    int32  lastPage = 2;
 }

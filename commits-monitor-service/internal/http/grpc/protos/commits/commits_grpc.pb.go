@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CommitsServiceClient interface {
-	GetRepoCommitFetchData(ctx context.Context, in *RepoCommiFetchDataRequest, opts ...grpc.CallOption) (*RepoCommitFetchDataResponse, error)
+	GetCommitFetchHistory(ctx context.Context, in *CommitFetchHistoryRequest, opts ...grpc.CallOption) (*CommitFetchHistoryResponse, error)
 }
 
 type commitsServiceClient struct {
@@ -33,9 +33,9 @@ func NewCommitsServiceClient(cc grpc.ClientConnInterface) CommitsServiceClient {
 	return &commitsServiceClient{cc}
 }
 
-func (c *commitsServiceClient) GetRepoCommitFetchData(ctx context.Context, in *RepoCommiFetchDataRequest, opts ...grpc.CallOption) (*RepoCommitFetchDataResponse, error) {
-	out := new(RepoCommitFetchDataResponse)
-	err := c.cc.Invoke(ctx, "/commits.CommitsService/GetRepoCommitFetchData", in, out, opts...)
+func (c *commitsServiceClient) GetCommitFetchHistory(ctx context.Context, in *CommitFetchHistoryRequest, opts ...grpc.CallOption) (*CommitFetchHistoryResponse, error) {
+	out := new(CommitFetchHistoryResponse)
+	err := c.cc.Invoke(ctx, "/commits.CommitsService/GetCommitFetchHistory", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (c *commitsServiceClient) GetRepoCommitFetchData(ctx context.Context, in *R
 // All implementations must embed UnimplementedCommitsServiceServer
 // for forward compatibility
 type CommitsServiceServer interface {
-	GetRepoCommitFetchData(context.Context, *RepoCommiFetchDataRequest) (*RepoCommitFetchDataResponse, error)
+	GetCommitFetchHistory(context.Context, *CommitFetchHistoryRequest) (*CommitFetchHistoryResponse, error)
 	mustEmbedUnimplementedCommitsServiceServer()
 }
 
@@ -54,8 +54,8 @@ type CommitsServiceServer interface {
 type UnimplementedCommitsServiceServer struct {
 }
 
-func (UnimplementedCommitsServiceServer) GetRepoCommitFetchData(context.Context, *RepoCommiFetchDataRequest) (*RepoCommitFetchDataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRepoCommitFetchData not implemented")
+func (UnimplementedCommitsServiceServer) GetCommitFetchHistory(context.Context, *CommitFetchHistoryRequest) (*CommitFetchHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCommitFetchHistory not implemented")
 }
 func (UnimplementedCommitsServiceServer) mustEmbedUnimplementedCommitsServiceServer() {}
 
@@ -70,20 +70,20 @@ func RegisterCommitsServiceServer(s grpc.ServiceRegistrar, srv CommitsServiceSer
 	s.RegisterService(&CommitsService_ServiceDesc, srv)
 }
 
-func _CommitsService_GetRepoCommitFetchData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RepoCommiFetchDataRequest)
+func _CommitsService_GetCommitFetchHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommitFetchHistoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CommitsServiceServer).GetRepoCommitFetchData(ctx, in)
+		return srv.(CommitsServiceServer).GetCommitFetchHistory(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/commits.CommitsService/GetRepoCommitFetchData",
+		FullMethod: "/commits.CommitsService/GetCommitFetchHistory",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommitsServiceServer).GetRepoCommitFetchData(ctx, req.(*RepoCommiFetchDataRequest))
+		return srv.(CommitsServiceServer).GetCommitFetchHistory(ctx, req.(*CommitFetchHistoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -96,8 +96,8 @@ var CommitsService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CommitsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetRepoCommitFetchData",
-			Handler:    _CommitsService_GetRepoCommitFetchData_Handler,
+			MethodName: "GetCommitFetchHistory",
+			Handler:    _CommitsService_GetCommitFetchHistory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
